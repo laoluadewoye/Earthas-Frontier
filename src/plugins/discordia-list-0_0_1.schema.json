@@ -1,0 +1,51 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "efdb://plugins/discordia-list-0_0_1.schema.json",
+    "title": "Discordia List Schema",
+    "description": "List of discordias to register in EFDB. Schema version 0.0.1.",
+    "type": "object",
+    "properties": {
+        "schemaVersion": {
+            "type": "string",
+            "description": "Schema version used by the plugin list file."
+        },
+        "discordias": {
+            "type": "array",
+            "description": "List of discordias. Must be a unique list of discordias.",
+            "items": {"$ref": "#/$defs/discordia"},
+            "uniqueItems": true
+        }
+    },
+    "$defs": {
+        "discordia": {
+            "type": "object",
+            "description": "A discorida to be registered with EFDB.",
+            "properties": {
+                "discoridaName": {
+                    "type": "string",
+                    "description": "Name of the discordia. Can only contain letters, underscores, and dashes.",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z_-]+$"
+                },
+                "discoridaFolder": {
+                    "type": "string",
+                    "description": "Folder location of the discordia. Can only contain letters, underscores, and dashes.",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z_-]+$"
+                },
+                "discordiaDependencies": {
+                    "type": "array",
+                    "description": "List of discordias folders to load before this one.",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^[a-zA-Z_-]+$"
+                    },
+                    "uniqueItems": true
+                }
+            },
+            "required": ["discoridaName", "discoridaFolder"]
+        }
+    },
+    "required": ["schemaVersion", "discordias"]
+}

@@ -1,0 +1,46 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "efdb://plugins/discordia-list-0_0_1.schema.json",
+    "title": "Discordia Schema",
+    "description": "Format for a discordia to be registered in EFDB. Schema version 0.0.1.",
+    "type": "object",
+    "properties": {
+        "primitive": {
+            "type": "object",
+            "properties": {
+                "primitiveName": {
+                    "type": "string"
+                },
+                "primitiveDescription": {
+                    "type": "string"
+                },
+                "primitiveInherited": {
+                    "type": "string"
+                },
+                "primitiveAttributes": {
+                    "type": "array",
+                    "description": "List of attributes that an implmentation of a primitive should have.",
+                    "items": {"$ref": "#/$defs/primitiveAttribute"},
+                    "uniqueItems": true
+                }
+            },
+            "required": []
+        }
+    },
+    "$defs": {
+        "primitiveAttribute": {
+            "type": "object",
+            "description": "An attribute in a primitive.",
+            "properties": {
+                "attributeName": {
+                    "type": "string"
+                },
+                "attributeType": {
+                    "enum": ["integer", "decimal", "string", "boolean", "array", "object"]
+                }
+            },
+            "required": ["attributeName", "attributeType"]
+        }
+    },
+    "required": []
+}

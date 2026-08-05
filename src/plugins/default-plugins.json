@@ -1,0 +1,7 @@
+{
+    "schemaVersion": "0.0.1",
+    "plugins": [
+        {"pluginName": "eris-core", "pluginFolder": "eris-core"},
+        {"pluginName": "kervane-server", "pluginFolder": "kervane-server"}
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "efdb://plugins/plugin-list-0_0_1.schema.json",
+    "title": "Plugin List Schema",
+    "description": "List of plugins to install in EFDB. Schema version 0.0.1.",
+    "type": "object",
+    "properties": {
+        "schemaVersion": {
+            "type": "string",
+            "description": "Schema version used by the plugin list file."
+        },
+        "plugins": {
+            "type": "array",
+            "description": "List of plugins. Must be a unique list of plugins.",
+            "items": {"$ref": "#/$defs/plugin"},
+            "uniqueItems": true
+        }
+    },
+    "$defs": {
+        "plugin": {
+            "type": "object",
+            "description": "A plugin to be loaded into EFDB.",
+            "properties": {
+                "pluginName": {
+                    "type": "string",
+                    "description": "Name of the plugin. Can only contain letters, underscores, and dashes.",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z_-]+$"
+                },
+                "pluginFolder": {
+                    "type": "string",
+                    "description": "Folder location of the plugin. Can only contain letters, underscores, and dashes.",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z_-]+$"
+                }
+            },
+            "required": ["pluginName", "pluginFolder"]
+        }
+    },
+    "required": ["schemaVersion", "plugins"]
+}

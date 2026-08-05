@@ -1,0 +1,92 @@
+Write ahead log
+B-tree and B+tree
+
+Database primitive requires a WAL primitive
+Relational Databse implementation has a WAL component
+
+database {
+    attributes {
+        {
+            WAL
+            A log for storing events in temporal order
+            is component = true
+            type = Vector of Events
+        }
+    }
+}
+
+relational database is loaded
+checks the list of types it has
+checks if the list of types matches the list of types needed for the primitive
+
+How to connect functions to skills
+
+Skills describe the expected inputs and outputs of a function
+Functions can list what inputs and outputs they use, but that would be trusting the function to be defined correctly
+A good solution is to specify that a function should pass in variables through a special input type, that can be checked at start time
+
+Question: If a write a function, how can I tell what the function inputs and outputs
+
+Creating rules for entities within a system
+
+A system can have multiple users and roles that utilize various entities in some way.
+
+For one entity, one account could just need to read, one account may need to write, one account may need to read and write.
+
+A good entity rule prevents a scenario where conflicting rules come up, and encourages someone to organize rules hiting a specific entity.
+
+Thus, the rule system
+- We have one rule set that is for a specific entity or set of entities
+
+When does someone have conflicting rules?
+- Multiple conflicting rules for the same user on the same entity
+- A user obtains a role with conflicting rules
+    - A user may obtain a role to temporarily do something that usually they can't.
+    - For a case like that, if a role rule and a user rule conflict (or if a user doesn't have a rule), the role rule takes precendent.
+
+What is a good system for having rules then?
+- Rules for a particular system are split into system rules and entity rules
+- System rules are meant to tell someone if they can
+    - navigate up the parent system
+    - navigate down into certain subsystems
+    - create/delete subsystems
+    - modify the system itself, including making rules for entities and subsystem
+    - delete the system itself
+- Entity rules are meant to tell someone if they can
+    - see an entity listed
+    - see the entity's metadata
+    - see the entity's attributes
+    - modify the entity's metadata, including ownership
+    - delete the entity
+    - do actions with the entity
+
+Command line argumentss
+
+Reconsidering the ID system
+- A quick paruse into similar applications that have such a variance of types (such as Kubernetes) find that they use key-value datastores such as etcd to store information about resources. 
+- Eartha's frontier is made to be a hierachial system, starting from a global system and then user/process made systems.
+- If kubernetes can store all it's information as key-value stores, EF can do the same, with a special API for creating additional files for systems made for databases, block storage, etc.
+- JSON files can be used for persistent storage using serde json.
+- Should we keep using entity counters as a way to track entities, or should we use a content-addressable hash?
+    - Hashes vs Autoincrement
+        - Autoincrement has a temporal creation order built in, while hashes don't.
+        - Autoincrement can be compactly stored, while hashes need more space.
+        - It's harder to run out of hashes than it is to run out of 2^32 numbers.
+    - The way entities will be organized
+        - We start with a global system, which will have an index for every basic type of entity.
+        - 
+- New identification system: S3-like object storage tracker
+    - starting with the global, and using element types as well as autoincrementor.
+    - The word "global" will be special word to represent the global system.
+    - Other key words can be used to specify type, such as "system" or "secret"
+    - Finally, an autoincrementor can be used to give a specific entity number. This incrementor is shared across all entities in a system.
+    - The first entity in the global system, if it is a secret will be called global/secret/1
+    - The first entity in the first user-made system, if it is a secret will be called global-system-1-secret-1
+    - If current located in the first user-made system, to get that same secret it would be secret-1
+- this new entity would require:
+    - The local ID number
+    - The custom name of the entity
+    - The owner of the entity
+    - The type of the entity
+    - The actual struct inside the entity
+- 
