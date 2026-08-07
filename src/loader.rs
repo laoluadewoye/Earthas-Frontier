@@ -1,6 +1,6 @@
 use crate::config::StartingConfig;
 use crate::utils::os::{get_os_default_folder, create_folder};
-use crate::elements::std::EFGlobalState;
+use crate::elements::components::EFGlobalState;
 
 pub fn load_program_state(starting_config: &StartingConfig) -> EFGlobalState {
     // Confirm the application data folder

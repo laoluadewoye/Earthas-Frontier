@@ -24,7 +24,7 @@ Second is the EFByteRepCompatible trait. Any struct that implements the EFByteRe
 
 #### Things to consider when implementing EFByteRepCompatible
 
-As EFByteRep is nothing more than a vector of bytes, how you decide to encode the information is completely up to you. A vector is used for flexibility purposes, but in the future, a more "professional" type may be used.
+As EFByteRep is nothing more than a vector of bytes, how you decide to encode the information is completely up to you. A vector is used for flexibility purposes, but in the future, a more "professional" type may be used. I also use two functions in the utils module that automate the conversion of vectors to a byte representation.
 
 How I personally implement EFByteRepCompatible takes inspiration from alot of network encodings out there:
 
@@ -39,6 +39,8 @@ How I personally implement EFByteRepCompatible takes inspiration from alot of ne
 If one or more of your attributes are struct types themselves, make the struct that they are EFByteRepCompatible, and just use their to_byte_rep function to get their vector of bytes to add.
 
 ##### For decoding to your struct
+
+Note: The first two offsets are now used for the version and components.
 
 Once you have your encoding, the decoding process kinda writes itself, although I do some cheeky stuff.
 

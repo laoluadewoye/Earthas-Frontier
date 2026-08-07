@@ -22,6 +22,14 @@ pub mod result {
     }
 }
 
+pub mod versions {
+    use crate::elements::EFVersion;
+
+    pub fn get_efidentity_version() -> EFVersion {
+        EFVersion(0, 0, 1)
+    }
+}
+
 pub mod json {
     use super::result::{EFOk, EFError};
     use std::{io::Read, path::Path};
@@ -150,7 +158,7 @@ pub mod os {
 pub mod std {
     use super::result::{EFOk, EFError};
     use sha2::{Digest, Sha256, Sha512};
-    use crate::elements::core::EFByteRep;
+    use crate::elements::EFByteRep;
 
     pub const BYTE_REP_NONE_OFFSET_ENCODING: usize = 0;
 
@@ -189,16 +197,63 @@ pub mod std {
         }
     }
 
-    pub fn get_byte_rep_from_byte_vectors(byte_vector_set: &mut Vec<Vec<u8>>, component: String) -> Result<EFOk<EFByteRep>, EFError> {
-        // Create a length vector
-        let lengths: Vec<usize> = byte_vector_set.iter().map(|v| v.len()).collect();
+    pub fn get_byte_vector_from_enum_and_string(type_byte: u8, type_str: &String) -> Vec<u8> {
+        let mut byte_vec: Vec<u8> = vec![type_byte];
+        let mut type_str_vec: Vec<u8> = type_str.clone().into_bytes();
+        byte_vec.append(&mut type_str_vec);
+        byte_vec
+    }
 
-        // Create empty byte rep
-        let mut bytes: Vec<u8> = Vec::new();
+    pub fn get_enum_and_string_from_byte_vector(byte_vec: &Vec<u8>) -> Result<EFOk<(u8, String)>, EFError> {
+        let type_byte: u8 = match byte_vec.get(0) {
+            Some(tb) => tb.clone(),
+            None => {
+                return Err(EFError{ 
+                    function: String::from("get_enum_and_string_from_byte_vec"), 
+                    line: String::from("match byte_vec.get(0)"), 
+                    msg: String::from("Could not get type byte.")
+                })
+            }
+        };
+
+        if byte_vec.len() == 1 {
+            Ok(EFOk{
+                value: (type_byte, String::from("")), 
+                msg: String::from("Returned type byte and empty string.")
+            })
+        }
+        else {
+            match byte_vec.get(1..) {
+                Some(s_arr) => match String::from_utf8(s_arr.to_vec()) {
+                    Ok(s) => Ok(EFOk{
+                        value: (type_byte, s),
+                        msg: String::from("Returned type byte and non-empty string.")
+                    }),
+                    Err(_) => Err(EFError{
+                        function: String::from("get_enum_and_string_from_byte_vec"), 
+                        line: String::from("String::from_utf8(s_arr.to_vec())"), 
+                        msg: String::from("Could not parse string.")
+                    })
+                },
+                None => Err(EFError{
+                    function: String::from("get_enum_and_string_from_byte_vec"), 
+                    line: String::from("match byte_vec.get(1..)"), 
+                    msg: String::from("Could not get string.")
+                })
+            }
+        }
+    }
+
+    pub fn get_byte_rep_from_byte_vectors(byte_vectors: &mut Vec<Vec<u8>>) -> Result<EFOk<EFByteRep>, EFError> {
+        // Create a length vector
+        let lengths: Vec<usize> = byte_vectors.iter().map(|v| v.len()).collect();
+
+        // Create a new bytes vector
+        let mut bytes: Vec<u8> = vec![byte_vectors.len() as u8];
 
         // Add offsets
-        let mut cur_offset: u8 = byte_vector_set.len() as u8;
-        for i in 0..byte_vector_set.len() {
+        let mut cur_offset: u8 = byte_vectors.len() as u8;
+        for i in 0..byte_vectors.len() {
             match lengths[i] {
                 BYTE_REP_NONE_OFFSET_ENCODING => { bytes.push(0u8); },
                 _ => { bytes.push(cur_offset); }
@@ -207,13 +262,13 @@ pub mod std {
         }
 
         // Add data
-        for i in 0..byte_vector_set.len() {
-            let mut byte_vector: &mut Vec<u8> = match byte_vector_set.get_mut(i) {
+        for i in 0..byte_vectors.len() {
+            let mut byte_vector: &mut Vec<u8> = match byte_vectors.get_mut(i) {
                 Some(bv) => bv,
                 None => {
                     return Err(EFError{
                         function: String::from("get_byte_rep_from_byte_vectors"), 
-                        line: String::from("byte_vector_set.get_mut(i)"), 
+                        line: String::from("byte_vectors.get_mut(i)"), 
                         msg: format!("Got a bad index for byte vector set.")
                     });
                 }
@@ -223,29 +278,41 @@ pub mod std {
 
         // Return byte rep
         Ok(EFOk{
-            value: EFByteRep { bytes, component }, 
+            value: EFByteRep { bytes },
             msg: String::from("Created byte rep.")
         })
     }
 
-    pub fn get_byte_vectors_from_byte_rep(byte_rep: &EFByteRep, attribute_count: usize) -> Result<EFOk<Vec<Vec<u8>>>, EFError> {
+    pub fn get_byte_vectors_from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Vec<Vec<u8>>>, EFError> {
+        // Get the attribute count
+        let attribute_count: usize = match byte_rep.bytes.get(0) {
+            Some(a) => a.clone() as usize,
+            None => {
+                return Err(EFError{
+                    function: String::from("get_byte_vectors_from_byte_rep"), 
+                    line: String::from("byte_rep.bytes.get(0)"), 
+                    msg: format!("Can not get attribute count from byte rep.")
+                });
+            }
+        };
+
         // Create empty byte vector set
-        let mut byte_vector_set: Vec<Vec<u8>> = Vec::new();
+        let mut byte_vectors: Vec<Vec<u8>> = Vec::new();
 
         // One loop to grab the offsets
         let mut offsets: Vec<usize> = Vec::new();
         for i in 0..attribute_count {
-            offsets.push(byte_rep.bytes[i] as usize)
+            offsets.push(byte_rep.bytes[1+i] as usize);
         }
 
         // Another loop to get all but the last vector
         for i in 0..(attribute_count-1) {
             // Check if the offset is set to the None encoding
             if offsets[i] == BYTE_REP_NONE_OFFSET_ENCODING {
-                byte_vector_set.push(Vec::new());
+                byte_vectors.push(Vec::new());
             }
             else if let Some(v) = byte_rep.bytes.get(offsets[i]..offsets[i+1]) {
-                byte_vector_set.push(v.to_vec());
+                byte_vectors.push(v.to_vec());
             }
             else {
                 return Err(EFError{
@@ -258,10 +325,10 @@ pub mod std {
 
         // Add the last vector
         if offsets[attribute_count-1] == BYTE_REP_NONE_OFFSET_ENCODING {
-            byte_vector_set.push(Vec::new());
+            byte_vectors.push(Vec::new());
         }
         else if let Some(v) = byte_rep.bytes.get(offsets[attribute_count-1]..) {
-            byte_vector_set.push(v.to_vec());
+            byte_vectors.push(v.to_vec());
         }
         else {
             return Err(EFError{
@@ -272,6 +339,6 @@ pub mod std {
         }
 
         // Return
-        Ok(EFOk{ value: byte_vector_set, msg: String::from("Created byte vector set.") })
+        Ok(EFOk{ value: byte_vectors, msg: String::from("Created byte vector set.") })
     }
 }

@@ -90,3 +90,5 @@ Reconsidering the ID system
     - The type of the entity
     - The actual struct inside the entity
 - 
+
+Enums, EFVersion, and EFByteRep should never be given implementations beyond EFByteRepCompatibleEnum for enums.
