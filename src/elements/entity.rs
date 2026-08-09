@@ -1,6 +1,6 @@
 use crate::elements::{EFComponent, EFByteRep};
 use crate::elements::efid::EFIDEntityOrName;
-use crate::utils::std::get_hash;
+use crate::utils::general::get_hash;
 use crate::utils::result::{EFOk, EFError};
 use chrono::Utc;
 use std::collections::HashMap;

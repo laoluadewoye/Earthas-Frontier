@@ -2,6 +2,8 @@ use crate::elements::{EFByteRep, EFComponent, EFByteRepCompatible};
 use crate::utils::result::{EFOk, EFError};
 
 impl EFComponent for String {
+    type ComponentParams = String;
+
     fn get_component_str(&self) -> String {
         String::from("string")
     }

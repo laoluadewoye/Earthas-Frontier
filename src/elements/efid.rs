@@ -1,5 +1,6 @@
 use crate::elements::{EFOk, EFError, EFByteRep, EFByteRepCompatibleEnum};
-use crate::utils::std::{get_byte_vector_from_enum_and_string, get_enum_and_string_from_byte_vector};
+use crate::utils::generic_vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
+use crate::utils::byte_vector::{get_byte_vector_from_enum_and_string, get_enum_and_string_from_byte_vector};
 
 #[derive(Debug)]
 pub enum EFIDAuthority {
@@ -110,32 +111,22 @@ impl EFByteRepCompatibleEnum for EFIDPathComponent where Self: Sized {
     }
 
     fn from_byte_vec(byte_vec: &Vec<u8>) -> Result<EFOk<Self>, EFError> where Self: Sized {
-        let type_byte: u8 = match byte_vec.get(0) {
-            Some(tb) => tb.clone(),
-            None => {
-                return Err(EFError{ 
-                    function: String::from("from_byte_vec"), 
-                    line: String::from("match byte_vec.get(0)"), 
-                    msg: String::from("Could not get type byte for EFIDPathComponent.")
-                });
-            }
+        let type_byte: u8 = match get_index_from_generic_vector(byte_vec, 0) {
+            Ok(index_object) => index_object.value,
+            Err(e) => { return Err(e); }
         };
 
         match type_byte {
             0u8 => {
-                match byte_vec.get(1..) {
-                    Some(bv) => match EFIDEntityOrName::from_byte_vec(&bv.to_vec()) {
+                match get_index_range_from_generic_vector(byte_vec, Some(1), None) {
+                    Ok(index_range) => match EFIDEntityOrName::from_byte_vec(&index_range.value) {
                         Ok(eon) => Ok(EFOk{
                             value: EFIDPathComponent::System(eon.value), 
                             msg: String::from("Returned system.")
                         }),
                         Err(e) => Err(e)
                     },
-                    None => Err(EFError{ 
-                        function: String::from("from_byte_vec"), 
-                        line: String::from("match byte_vec.get(1..)"), 
-                        msg: String::from("Could not get string for EFIDPathComponent.")
-                    })
+                    Err(e) => Err(e)
                 }
             },
             1u8 if byte_vec.len() == 1 => Ok(EFOk{

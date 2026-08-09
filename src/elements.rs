@@ -3,6 +3,12 @@ use crate::utils::result::{EFOk, EFError};
 #[derive(Debug, Clone)]
 pub struct EFVersion(pub u8, pub u8, pub u8);
 
+impl EFVersion {
+    pub fn get_major(&self) -> u8 { self.0 }
+    pub fn get_minor(&self) -> u8 { self.1 }
+    pub fn get_patch(&self) -> u8 { self.2 }
+}
+
 pub trait EFComponent {
     type ComponentParams;
 
@@ -71,9 +77,15 @@ impl EFComponent for EFByteRep {
     }
 }
 
+pub struct EFByteRepBuilder {
+    pub byte_vectors: Vec<Vec<u8>>,
+    pub version_vector: Vec<u8>,
+    pub component_vector: Vec<u8>
+}
+
 pub trait EFByteRepCompatible {
     fn to_byte_rep(&self) -> Result<EFOk<EFByteRep>, EFError>;
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> where Self: Sized;
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> where Self: Sized;
 }
 
 pub trait EFByteRepCompatibleEnum {
