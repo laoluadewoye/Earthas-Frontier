@@ -52,6 +52,7 @@ pub mod component_str {
 
     // Core components
     pub const EFIDENTITY_STR: &'static str = "identity";
+    pub const EFSECRET_STR: &'static str = "secret";
 }
 
 pub mod versions {
@@ -86,6 +87,7 @@ pub mod versions {
 
     // Core components
     pub const EFIDENTITY_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFSECRET_VERSION: EFVersion = EFVersion(0, 0, 1);
 }
 
 pub mod json {

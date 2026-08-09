@@ -1,8 +1,7 @@
-use crate::elements::{EFComponent, EFByteRep};
+use crate::elements::{EFComponent, EFByteRep, EFUTCTimestamp};
 use crate::elements::efid::EFIDEntityOrName;
 use crate::utils::general::get_hash;
 use crate::utils::result::{EFOk, EFError};
-use chrono::Utc;
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -21,24 +20,24 @@ enum EFEntityPrivilege {
 }
 
 #[derive(Debug)]
-pub struct EFEntityRule {
+struct EFEntityRule {
     identities: Vec<EFIDEntityOrName>,
     effect: EFEntityEffect,
     privileges: Vec<EFEntityPrivilege>
 }
 
 #[derive(Debug)]
-pub struct EFFile {}
+struct EFFile {}
 
 // NOTE: NEED TO ADD FUNCTIONALITY FOR INTERACTING WITH FILES AND RULES
 #[derive(Debug)]
 pub struct EFEntity<T: EFComponent> {
     id: String,
     name: String,
-    system: String,
-    date_created: String,
-    date_accessed: String,
-    date_modified: String,
+    system: EFIDEntityOrName,
+    date_created: EFUTCTimestamp,
+    date_accessed: EFUTCTimestamp,
+    date_modified: EFUTCTimestamp,
     rules: HashMap<String, Vec<EFEntityRule>>,
     files: Vec<EFFile>,
     component: T,
@@ -46,9 +45,9 @@ pub struct EFEntity<T: EFComponent> {
 }
 
 impl <T: EFComponent> EFEntity<T> {
-    pub fn new(name: String, system: String, component: T, salt: String, entity_hash: &String) -> EFEntity<T> {
-        let timestamp: String = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
-        let hash: String = match get_hash(vec![&system, &timestamp, &salt], entity_hash) {
+    pub fn new(name: String, system: EFIDEntityOrName, component: T, salt: String, entity_hash: &String) -> EFEntity<T> {
+        let timestamp: EFUTCTimestamp = EFUTCTimestamp::get_timestamp_for_now();
+        let hash: String = match get_hash(vec![system.to_type_and_string().1, &timestamp.to_string(), &salt], entity_hash) {
             Ok(h) => h.value,
             Err(e) => { panic!("{}", &e.to_string().as_str()); }
         };
@@ -80,27 +79,27 @@ impl <T: EFComponent> EFEntity<T> {
         self.name = name;
     }
 
-    pub fn get_system(&self) -> &String {
+    pub fn get_system(&self) -> &EFIDEntityOrName {
         &self.system
     }
 
-    pub fn get_date_created(&self) -> &String {
+    pub fn get_date_created(&self) -> &EFUTCTimestamp {
         &self.date_created
     }
 
-    pub fn get_date_accessed(&self) -> &String {
+    pub fn get_date_accessed(&self) -> &EFUTCTimestamp {
         &self.date_accessed
     }
 
-    pub fn set_date_accessed(&mut self, date_accessed: String) {
+    pub fn set_date_accessed(&mut self, date_accessed: EFUTCTimestamp) {
         self.date_accessed = date_accessed;
     }
 
-    pub fn get_date_modified(&self) -> &String {
+    pub fn get_date_modified(&self) -> &EFUTCTimestamp {
         &self.date_modified
     }
 
-    pub fn set_date_modified(&mut self, date_modified: String) {
+    pub fn set_date_modified(&mut self, date_modified: EFUTCTimestamp) {
         self.date_modified = date_modified;
     }
 

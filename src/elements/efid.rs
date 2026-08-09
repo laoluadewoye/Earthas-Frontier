@@ -54,6 +54,15 @@ pub enum EFIDEntityOrName {
     Name(String)
 }
 
+impl EFIDEntityOrName {
+    pub fn to_type_and_string(&self) -> (&str, &String) {
+        match self {
+            EFIDEntityOrName::ID(s) => ("id", s),
+            EFIDEntityOrName::Name(s) => ("name", s)
+        }
+    }
+}
+
 impl EFByteRepCompatibleEnum for EFIDEntityOrName where Self: Sized {
     fn get_byte_vec(&self) -> Vec<u8> {
         match self {

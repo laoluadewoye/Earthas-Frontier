@@ -1,5 +1,13 @@
-use crate::elements::{EFVersion, EFComponent, EFByteRep, EFByteRepBuilder, EFByteRepCompatible, EFByteRepCompatibleEnum};
-use crate::elements::efid::{EFIDEntityOrName, EFQuery, EFResponse};
+use crate::elements::{
+    EFVersion, 
+    EFComponent, 
+    EFUTCTimestamp,
+    EFByteRep, 
+    EFByteRepBuilder, 
+    EFByteRepCompatible, 
+    EFByteRepCompatibleEnum
+};
+use crate::elements::efid::{EFID, EFIDEntityOrName, EFQuery, EFResponse};
 use crate::elements::common::string::EFString;
 use crate::utils::result::{EFOk, EFError};
 use crate::utils::versions::*;
@@ -9,43 +17,27 @@ use crate::utils::byte_vector::{get_byte_vectors_and_version_from_byte_rep, get_
 
 pub mod identity;
 pub mod secret;
+pub mod hook;
+pub mod reference;
+pub mod connection;
+pub mod dataflow;
+pub mod rule;
+pub mod tag;
 
 use super::primitives::unsigned_int::EFUSize;
 use super::entity::{EFStaticEntityTracker, EFByteEntityTracker};
 use identity::EFIdentity;
 use secret::EFSecret;
 
-#[derive(Debug)]
-pub struct EFHook;
-
-#[derive(Debug)]
-pub struct EFReference;
-
-#[derive(Debug)]
-pub struct EFConnection;
-
-#[derive(Debug)]
-pub struct EFDataflow;
-
-#[derive(Debug)]
-pub struct EFCache;
-
-#[derive(Debug)]
-pub struct EFRule;
-
-#[derive(Debug)]
-pub struct EFTags;
-
 pub struct EFSystem {
     id_salt: EFUSize,
-    absolute_path: String,
+    absolute_path: EFString,
     identities: EFStaticEntityTracker<EFIdentity>,
     secrets: EFStaticEntityTracker<EFSecret>,
     hooks: EFStaticEntityTracker<EFHook>,
     references: EFStaticEntityTracker<EFReference>,
     connections: EFStaticEntityTracker<EFConnection>,
     dataflows: EFStaticEntityTracker<EFDataflow>,
-    cache: EFCache,
     byte_entities: EFByteEntityTracker,
     rules: EFStaticEntityTracker<EFRule>,
     tags: EFStaticEntityTracker<EFTags>,
