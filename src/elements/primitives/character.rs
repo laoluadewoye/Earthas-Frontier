@@ -51,9 +51,9 @@ impl EFByteRepCompatible for EFChar {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFCHAR_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFCHAR_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };

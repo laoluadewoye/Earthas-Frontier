@@ -47,6 +47,9 @@ pub mod component_str {
     pub const EFBOOL_STR: &'static str = "bool";
     pub const EFCHAR_STR: &'static str = "char";
 
+    // Common components
+    pub const EFSTRING_STR: &'static str = "string";
+
     // Core components
     pub const EFIDENTITY_STR: &'static str = "identity";
 }
@@ -77,6 +80,9 @@ pub mod versions {
     // Other primitives
     pub const EFBOOL_VERSION: EFVersion = EFVersion(0, 0, 1);
     pub const EFCHAR_VERSION: EFVersion = EFVersion(0, 0, 1);
+
+    // Common components
+    pub const EFSTRING_VERSION: EFVersion = EFVersion(0, 0, 1);
 
     // Core components
     pub const EFIDENTITY_VERSION: EFVersion = EFVersion(0, 0, 1);

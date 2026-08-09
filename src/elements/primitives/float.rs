@@ -51,9 +51,9 @@ impl EFByteRepCompatible for EFF32 {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFF32_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFF32_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };
@@ -129,9 +129,9 @@ impl EFByteRepCompatible for EFF64 {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFF64_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFF64_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };

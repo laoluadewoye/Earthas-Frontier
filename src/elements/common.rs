@@ -1,41 +1,14 @@
-use crate::elements::{EFByteRep, EFComponent, EFByteRepCompatible};
+// Heavy use statements to bring functionality into scope
+use crate::elements::{EFByteRep, EFByteRepBuilder, EFComponent, EFByteRepCompatible, EFVersion};
+use crate::elements::efid::{EFQuery, EFResponse};
 use crate::utils::result::{EFOk, EFError};
+use crate::utils::versions::*;
+use crate::utils::component_str::*;
+use crate::utils::byte_vector::{
+    get_byte_rep_from_builder, 
+    get_byte_vectors_and_version_from_byte_rep,
+    get_string_from_byte_vector
+};
+use crate::utils::generic_vector::get_index_from_generic_vector;
 
-impl EFComponent for String {
-    type ComponentParams = String;
-
-    fn get_component_str(&self) -> String {
-        String::from("string")
-    }
-}
-
-impl EFByteRepCompatible for String {
-    fn to_byte_rep(&self) -> Result<EFOk<EFByteRep>, EFError> {
-        Ok(EFOk{
-            value: EFByteRep { bytes: self.clone().into_bytes(), component: String::from("string") },
-            msg: String::from("Created byte rep from string.")
-        })
-    }
-
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
-        if !br.component.eq("string") {
-            return Err(EFError{
-                function: String::from("from_byte_rep"), 
-                line: String::from("!br.component.eq(\"string\")"), 
-                msg: String::from("Component is not set to string.")
-            });
-        }
-
-        match String::from_utf8(br.bytes.clone()) {
-            Ok(s) => Ok(EFOk{ 
-                value: s,
-                msg: String::from("Converted the byte rep into a string.")
-            }),
-            Err(_) => Err(EFError{
-                function: String::from("from_byte_rep"), 
-                line: String::from("String::from_utf8(br.bytes.clone())"), 
-                msg: String::from("Passed in byte rep is not compatible with UTF-8.")
-            })
-        }
-    }
-}
+pub mod string;

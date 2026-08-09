@@ -48,9 +48,9 @@ impl EFByteRepCompatible for EFISize {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFISIZE_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFISIZE_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };
@@ -126,9 +126,9 @@ impl EFByteRepCompatible for EFI8 {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFI8_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFI8_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };
@@ -204,9 +204,9 @@ impl EFByteRepCompatible for EFI16 {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFI16_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFI16_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };
@@ -282,9 +282,9 @@ impl EFByteRepCompatible for EFI32 {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFI32_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFI32_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };
@@ -360,9 +360,9 @@ impl EFByteRepCompatible for EFI64 {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFI64_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFI64_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };
@@ -438,9 +438,9 @@ impl EFByteRepCompatible for EFI128 {
         get_byte_rep_from_builder(&mut builder)
     }
 
-    fn from_byte_rep(br: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
         // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(br, EFI128_STR) {
+        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFI128_STR) {
             Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
             Err(e) => { return Err(e); }
         };
