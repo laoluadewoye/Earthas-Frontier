@@ -46,12 +46,13 @@ pub struct EFEntity<T: EFComponent> {
 }
 
 impl <T: EFComponent> EFEntity<T> {
-    pub fn new(name: String, system: String, component: T, component_type: String, salt: String, entity_hash: &String) -> EFEntity<T> {
+    pub fn new(name: String, system: String, component: T, salt: String, entity_hash: &String) -> EFEntity<T> {
         let timestamp: String = Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
         let hash: String = match get_hash(vec![&system, &timestamp, &salt], entity_hash) {
             Ok(h) => h.value,
             Err(e) => { panic!("{}", &e.to_string().as_str()); }
         };
+        let component_type: String = component.get_component_str();
 
         EFEntity { 
             id: hash,

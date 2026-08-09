@@ -1,14 +1,4 @@
-use crate::elements::{EFVersion, EFComponent, EFByteRep, EFByteRepBuilder, EFByteRepCompatible, EFByteRepCompatibleEnum};
-use crate::elements::efid::{EFIDEntityOrName, EFQuery, EFResponse};
-use crate::utils::result::{EFOk, EFError};
-use crate::utils::versions::EFIDENTITY_VERSION;
-use crate::utils::component_str::EFIDENTITY_STR;
-use crate::utils::generic_vector::get_index_from_generic_vector;
-use crate::utils::byte_vector::{
-    get_string_from_byte_vector,
-    get_byte_rep_from_builder, 
-    get_byte_vectors_and_version_from_byte_rep
-};
+use super::*;
 
 #[derive(Debug, Clone)]
 enum EFIdentityType {
@@ -49,14 +39,14 @@ impl EFByteRepCompatibleEnum for EFIdentityType where Self: Sized {
 
 #[derive(Debug)]
 pub struct EFIdentity {
-    name: String,
+    name: EFString,
     identity_type: EFIdentityType,
     secret: Option<EFIDEntityOrName>,
     version: EFVersion
 }
 
 impl EFComponent for EFIdentity {
-    type ComponentParams = (String, EFIdentityType, Option<EFIDEntityOrName>);
+    type ComponentParams = (EFString, EFIdentityType, Option<EFIDEntityOrName>);
 
     fn new(params: Self::ComponentParams) -> Self where Self: Sized {
         EFIdentity { 
@@ -82,7 +72,7 @@ impl EFComponent for EFIdentity {
 
     fn clone_component(&self) -> Self where Self: Sized {
         EFIdentity {
-            name: self.name.clone(), 
+            name: self.name.clone_component(), 
             identity_type: self.identity_type.clone(), 
             secret: self.secret.clone(), 
             version: self.version.clone()
@@ -101,7 +91,10 @@ impl EFByteRepCompatible for EFIdentity {
         let component_vector: Vec<u8> = self.get_component_str().into_bytes();
 
         // Create vectors from attributes
-        let name_bytes: Vec<u8> = self.name.clone().into_bytes();
+        let name_bytes: Vec<u8> = match self.name.to_byte_rep() {
+            Ok(nb) => nb.value.bytes,
+            Err(e) => { return Err(e); }
+        };
         let identity_type_bytes: Vec<u8> = self.identity_type.get_byte_vec();
         let secret_bytes: Vec<u8> = match &self.secret {
             Some(se) => se.clone().get_byte_vec(),
@@ -126,8 +119,8 @@ impl EFByteRepCompatible for EFIdentity {
         };
 
         // Create the attributes
-        let name: String = match get_index_from_generic_vector(&byte_vectors, 0) {
-            Ok(index_object) => match get_string_from_byte_vector(index_object.value) {
+        let name: EFString = match get_index_from_generic_vector(&byte_vectors, 0) {
+            Ok(index_object) => match EFString::from_byte_rep(&EFByteRep{ bytes: index_object.value }) {
                 Ok(s) => s.value,
                 Err(e) => { return Err(e); }
             },

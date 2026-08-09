@@ -1,5 +1,6 @@
 use super::*;
 
+#[derive(Debug)]
 pub struct EFString(pub String, pub EFVersion);
 
 impl EFComponent for EFString {
