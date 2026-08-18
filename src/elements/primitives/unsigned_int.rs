@@ -26,6 +26,14 @@ impl EFComponent for EFUSize {
         EFUSize(self.0, self.1.clone())
     }
 
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
         EFResponse
     }
@@ -102,6 +110,14 @@ impl EFComponent for EFU8 {
 
     fn clone_component(&self) -> Self {
         EFU8(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
@@ -182,6 +198,14 @@ impl EFComponent for EFU16 {
         EFU16(self.0, self.1.clone())
     }
 
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
         EFResponse
     }
@@ -258,6 +282,14 @@ impl EFComponent for EFU32 {
 
     fn clone_component(&self) -> Self {
         EFU32(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
@@ -338,6 +370,14 @@ impl EFComponent for EFU64 {
         EFU64(self.0, self.1.clone())
     }
 
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
         EFResponse
     }
@@ -414,6 +454,14 @@ impl EFComponent for EFU128 {
 
     fn clone_component(&self) -> Self {
         EFU128(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {

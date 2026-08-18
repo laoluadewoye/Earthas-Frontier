@@ -9,6 +9,6 @@ enum EFReferenceStatus {
 #[derive(Debug)]
 pub struct EFReference {
     local_name: EFString,
-    global_id: EFID,
+    global_id: EFURIString,
     status: EFReferenceStatus
 }

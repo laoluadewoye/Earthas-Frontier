@@ -42,7 +42,15 @@ impl EFComponent for EFSecret {
         }
     }
 
-    fn handle_request(&self, request: &crate::elements::efid::EFQuery) -> crate::elements::efid::EFResponse {
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
+    fn handle_request(&self, request: &crate::elements::uri::EFQuery) -> crate::elements::uri::EFResponse {
         EFResponse
     }
 }

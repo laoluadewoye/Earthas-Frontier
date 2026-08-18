@@ -92,3 +92,11 @@ Reconsidering the ID system
 - 
 
 Enums, EFVersion, and EFByteRep should never be given implementations beyond EFByteRepCompatibleEnum for enums.
+
+
+
+Access tree
+    - Level 1: Privilege Keys
+    - Level 2: ID Keys
+    - Value: Allow or Deny
+    

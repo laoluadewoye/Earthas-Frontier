@@ -1,119 +1,219 @@
-use crate::elements::{EFComponent, EFByteRep, EFUTCTimestamp};
-use crate::elements::efid::EFIDEntityOrName;
-use crate::utils::general::get_hash;
-use crate::utils::result::{EFOk, EFError};
-use std::collections::HashMap;
+use crate::elements::timestamp::EFUTCTimestamp;
+use crate::elements::uri::{EFURITarget, EFURIString};
+use crate::utils::result::{EFError, EFOk, EFSuccess};
+use crate::elements::rule::{EFRuleEffect};
 
 #[derive(Debug)]
-enum EFEntityEffect {
-    Allow,
-    Deny
+pub enum EFEntityPrivilege {
+    CloneEntity, // Cloning structs
+    AccessMetadata, // Timestamps, name, ID, owner
+    ModifyMetadata, // Timestamps, name, ID, owner
+    AccessUserRules,
+    AccessAllRules,
+    ModifyRules,
+    CreateDeleteFiles,
+    AccessFile(String),
+    ModifyFile(String),
+    AccessComponent,
+    ModifyComponent
 }
 
 #[derive(Debug)]
-enum EFEntityPrivilege {
-    SeeEntity,
-    SeeEntityMetadata,
-    SeeEntityAttributes,
-    ModifyEntity,
-    DoEntityActions,
-}
-
-#[derive(Debug)]
-struct EFEntityRule {
-    identities: Vec<EFIDEntityOrName>,
-    effect: EFEntityEffect,
-    privileges: Vec<EFEntityPrivilege>
-}
-
-#[derive(Debug)]
-struct EFFile {}
-
-// NOTE: NEED TO ADD FUNCTIONALITY FOR INTERACTING WITH FILES AND RULES
-#[derive(Debug)]
-pub struct EFEntity<T: EFComponent> {
+pub struct EFEntityRule {
     id: String,
-    name: String,
-    system: EFIDEntityOrName,
-    date_created: EFUTCTimestamp,
-    date_accessed: EFUTCTimestamp,
-    date_modified: EFUTCTimestamp,
-    rules: HashMap<String, Vec<EFEntityRule>>,
-    files: Vec<EFFile>,
-    component: T,
-    component_type: String,
+    effect: EFRuleEffect,
+    privilege: EFEntityPrivilege
 }
 
-impl <T: EFComponent> EFEntity<T> {
-    pub fn new(name: String, system: EFIDEntityOrName, component: T, salt: String, entity_hash: &String) -> EFEntity<T> {
-        let timestamp: EFUTCTimestamp = EFUTCTimestamp::get_timestamp_for_now();
-        let hash: String = match get_hash(vec![system.to_type_and_string().1, &timestamp.to_string(), &salt], entity_hash) {
-            Ok(h) => h.value,
-            Err(e) => { panic!("{}", &e.to_string().as_str()); }
-        };
-        let component_type: String = component.get_component_str();
+#[derive(Debug)]
+pub struct EFEntityGroupRule {
+    ids: Vec<String>,
+    effect: EFRuleEffect,
+    privilege: EFEntityPrivilege
+}
 
-        EFEntity { 
-            id: hash,
-            name,
-            system, 
-            date_created: timestamp.clone(),
-            date_accessed: timestamp.clone(),
-            date_modified: timestamp,
-            rules: HashMap::new(),
-            files: Vec::new(),
-            component,
-            component_type
-        }
-    }
+#[derive(Debug)]
+pub struct EFEntityRuleSet {
+    id: String,
+    privilege_effects: Vec<(EFRuleEffect, EFEntityPrivilege)>
+}
 
-    pub fn get_id(&self) -> &String {
-        &self.id
-    }
+#[derive(Debug)]
+pub struct EFEntityGroupRuleSet {
+    ids: Vec<String>,
+    privilege_effects: Vec<(EFRuleEffect, EFEntityPrivilege)>
+}
 
-    pub fn get_name(&self) -> &String {
-        &self.name
-    }
+#[derive(Debug)]
+pub struct EFEntityFile(String);
 
-    pub fn set_name(&mut self, name: String) {
-        self.name = name;
-    }
+pub trait EFEntity {
+    type EntityType;
 
-    pub fn get_system(&self) -> &EFIDEntityOrName {
-        &self.system
-    }
+    // Create new entity
+    fn new() -> Self::EntityType;
 
-    pub fn get_date_created(&self) -> &EFUTCTimestamp {
-        &self.date_created
-    }
+    // Clone entity
+    fn clone_entity(&self) -> Self::EntityType;
 
-    pub fn get_date_accessed(&self) -> &EFUTCTimestamp {
-        &self.date_accessed
-    }
+    // Check entity rules for a certain action
+    fn check_privilege(
+        &self, 
+        current_id: &String,
+        target_privilege: EFEntityPrivilege
+    ) -> Result<EFOk<EFSuccess>, EFError>;
 
-    pub fn set_date_accessed(&mut self, date_accessed: EFUTCTimestamp) {
-        self.date_accessed = date_accessed;
-    }
+    // Work with entity's ID
+    fn get_id(&self, current_id: &String) -> Result<EFOk<&String>, EFError>;
 
-    pub fn get_date_modified(&self) -> &EFUTCTimestamp {
-        &self.date_modified
-    }
+    // Work with entity's name
+    fn get_name(&self, current_id: &String) -> Result<EFOk<&String>, EFError>;
+    fn set_name(
+        &mut self, 
+        current_id: &String,
+        new_name: String
+    ) -> Result<EFOk<EFSuccess>, EFError>;
 
-    pub fn set_date_modified(&mut self, date_modified: EFUTCTimestamp) {
-        self.date_modified = date_modified;
-    }
+    // Work with owner of entity
+    fn get_owner(&self, current_id: &String) -> Result<EFOk<&EFURIString>, EFError>;
+    fn set_owner(
+        &mut self, 
+        current_id: &String, 
+        new_owner: EFURIString
+    ) -> Result<EFOk<EFSuccess>, EFError>;
 
-    pub fn get_component(&self) -> &T {
-        &self.component
-    }
+    // Work with creation date, last accessed date, and last modified date
+    // Probably will be indirect modifications
+    fn get_created(&self, current_id: &String) -> Result<EFOk<&EFUTCTimestamp>, EFError>;
 
-    pub fn get_mutable_component(&mut self) -> &mut T {
-        &mut self.component
-    }
+    fn get_last_accessed(&self, current_id: &String) -> Result<EFOk<&EFUTCTimestamp>, EFError>;
+    fn set_last_accessed(
+        &mut self, 
+        current_id: &String, 
+        new_timestamp: EFUTCTimestamp
+    ) -> Result<EFOk<EFSuccess>, EFError>;
 
-    pub fn get_component_type(&self) -> &String {
-        &self.component_type
-    }
+    fn get_last_modified(&self, current_id: &String) -> Result<EFOk<&EFUTCTimestamp>, EFError>;
+    fn set_last_modified(
+        &mut self, 
+        current_id: &String,
+        new_timestamp: EFUTCTimestamp
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+
+    // Get the entity's rules
+    fn get_all_rules(&self, current_id: &String) -> Result<EFOk<Vec<EFEntityRule>>, EFError>;
+    fn get_all_rules_for_id(
+        &self, 
+        current_id: &String,
+        target_id: String
+    ) -> Result<EFOk<Vec<EFEntityRule>>, EFError>;
+    fn get_all_rules_for_privilege(
+        &self, 
+        current_id: &String, 
+        target_privilege: EFEntityPrivilege
+    ) -> Result<EFOk<Vec<EFEntityRule>>, EFError>;
+
+    // Add rules to the entity
+    fn add_rule(
+        &mut self,
+        current_id: &String,
+        new_rule: EFEntityRule
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn add_multiple_rules(
+        &mut self,
+        current_id: &String,
+        new_rules: Vec<EFEntityRule>
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn add_multiple_rules_for_id(
+        &mut self,
+        current_id: &String,
+        new_rules: EFEntityRuleSet
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn add_rule_for_multiple_ids(
+        &mut self,
+        current_id: &String,
+        new_group_rule: EFEntityGroupRule
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn add_multiple_rules_for_multiple_ids(
+        &mut self,
+        current_id: &String,
+        new_group_rules: EFEntityGroupRuleSet
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+
+    // Remove rules from the entity
+    fn remove_rule(
+        &mut self,
+        current_id: &String,
+        target_rule: EFEntityRule
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn remove_multiple_rules(
+        &mut self,
+        current_id: &String,
+        target_rules: Vec<EFEntityRule>
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn remove_multiple_rules_for_id(
+        &mut self,
+        current_id: &String,
+        target_rules: EFEntityRuleSet
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn remove_rule_for_multiple_ids(
+        &mut self,
+        current_id: &String,
+        target_group_rule: EFEntityGroupRule
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn remove_multiple_rules_for_multiple_ids(
+        &mut self,
+        current_id: &String,
+        target_group_rules: EFEntityGroupRuleSet
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+
+    // NOT DONE WITH THIS
+    // NOT DONE WITH THIS
+    // NOT DONE WITH THIS
+
+    // Work with entity's files
+    fn create_file(
+        &mut self,
+        current_id: &String,
+        new_file_path_name: String
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn get_file(
+        &self,
+        current_id: &String,
+        path_name: &String
+    ) -> Result<EFOk<EFEntityFile>, EFError>;
+    fn get_mutable_file(
+        &mut self,
+        current_id: &String,
+        path_name: &String
+    ) -> Result<EFOk<EFEntityFile>, EFError>;
+    fn append_to_file(
+        &mut self,
+        current_id: &String,
+        path_name: &String,
+        new_line: String
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn insert_to_file(
+        &mut self,
+        current_id: &String,
+        path_name: &String,
+        new_line: String,
+        line_number: usize
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn replace_in_file();
+    fn replace_range_in_file();
+    fn update_file();
+    fn delete_file();
+
+    // Work with entity's component
+    fn get_component();
+    fn get_mutable_component();
+    fn get_component_type(&self) -> String;
+    fn query_component();
+
+    // NOT DONE WITH THIS
+    // NOT DONE WITH THIS
+    // NOT DONE WITH THIS
 }
 
 pub trait EFEntityTracker {
@@ -124,120 +224,4 @@ pub trait EFEntityTracker {
     fn pop_entity(&mut self, entity_id: &str) -> Result<EFOk<Self::EntityType>, EFError>;
     fn get_entity(&self, entity_id: &str) -> Result<EFOk<&Self::EntityType>, EFError>;
     fn get_mut_entity(&mut self, entity_id: &str) -> Result<EFOk<&mut Self::EntityType>, EFError>;
-}
-
-pub struct EFStaticEntityTracker<T: EFComponent> {
-    entities: HashMap<String, EFEntity<T>>
-}
-
-impl<T: EFComponent> EFEntityTracker for EFStaticEntityTracker<T> {
-    type EntityType = EFEntity<T>;
-
-    fn new() -> Self {
-        EFStaticEntityTracker { entities: HashMap::new() }
-    }
-
-    fn add_entity(&mut self, entity: Self::EntityType) -> Option<Self::EntityType> {
-        self.entities.insert(entity.get_id().clone(), entity)
-    }
-
-    fn pop_entity(&mut self, entity_id: &str) -> Result<EFOk<Self::EntityType>, EFError> {
-        match self.entities.remove(entity_id) {
-            Some(e) => Ok(EFOk { 
-                value: e, 
-                msg: format!("Popped entity {} from tracker.", entity_id)
-            }),
-            None => Err(EFError { 
-                function: String::from("pop_entity"), 
-                line: String::from("self.entities.remove(entity_id)"), 
-                msg: format!("Could not find entity {} in tracker to pop.", entity_id)
-            })
-        }
-    }
-
-    fn get_entity(&self, entity_id: &str) -> Result<EFOk<&Self::EntityType>, EFError> {
-        match self.entities.get(entity_id) {
-            Some(e) => Ok(EFOk { 
-                value: e, 
-                msg: format!("Got entity {} from tracker.", entity_id)
-            }),
-            None => Err(EFError { 
-                function: String::from("get_entity"),
-                line: String::from("self.entities.get(entity_id)"), 
-                msg: format!("Could not find entity {} in tracker to get.", entity_id)
-            })
-        }
-    }
-
-    fn get_mut_entity(&mut self, entity_id: &str) -> Result<EFOk<&mut Self::EntityType>, EFError> {
-        match self.entities.get_mut(entity_id) {
-            Some(e) => Ok(EFOk { 
-                value: e, 
-                msg: format!("Got mutable entity {} from tracker.", entity_id)
-            }),
-            None => Err(EFError { 
-                function: String::from("get_mut_entity"),
-                line: String::from("self.entities.get_mut(entity_id)"), 
-                msg: format!("Could not find entity {} in tracker to get as mutable.", entity_id)
-            })
-        }
-    }
-}
-
-pub struct EFByteEntityTracker {
-    entities: HashMap<String, EFEntity<EFByteRep>>
-}
-
-impl EFEntityTracker for EFByteEntityTracker {
-    type EntityType = EFEntity<EFByteRep>;
-
-    fn new() -> Self {
-        EFByteEntityTracker { entities: HashMap::new() }
-    }
-
-    fn add_entity(&mut self, entity: Self::EntityType) -> Option<Self::EntityType> {
-        self.entities.insert(entity.get_id().clone(), entity)
-    }
-
-    fn pop_entity(&mut self, entity_id: &str) -> Result<EFOk<Self::EntityType>, EFError> {
-        match self.entities.remove(entity_id) {
-            Some(e) => Ok(EFOk { 
-                value: e, 
-                msg: format!("Popped dynamic entity {} from tracker.", entity_id)
-            }),
-            None => Err(EFError { 
-                function: String::from("pop_entity"), 
-                line: String::from("self.entities.remove(entity_id)"), 
-                msg: format!("Could not find dynamic entity {} in tracker to pop.", entity_id)
-            })
-        }
-    }
-
-    fn get_entity(&self, entity_id: &str) -> Result<EFOk<&Self::EntityType>, EFError> {
-        match self.entities.get(entity_id) {
-            Some(e) => Ok(EFOk { 
-                value: e, 
-                msg: format!("Got dynamic entity {} from tracker.", entity_id)
-            }),
-            None => Err(EFError { 
-                function: String::from("get_entity"),
-                line: String::from("self.entities.get(entity_id)"), 
-                msg: format!("Could not find dynamic entity {} in tracker to get.", entity_id)
-            })
-        }
-    }
-
-    fn get_mut_entity(&mut self, entity_id: &str) -> Result<EFOk<&mut Self::EntityType>, EFError> {
-        match self.entities.get_mut(entity_id) {
-            Some(e) => Ok(EFOk {
-                value: e, 
-                msg: format!("Got mutable dynamic entity {} from tracker.", entity_id)
-            }),
-            None => Err(EFError {
-                function: String::from("get_mut_entity"),
-                line: String::from("self.entities.get_mut(entity_id)"), 
-                msg: format!("Could not find dynamic entity {} in tracker to get as mutable.", entity_id)
-            })
-        }
-    }
 }

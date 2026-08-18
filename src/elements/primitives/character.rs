@@ -27,6 +27,14 @@ impl EFComponent for EFChar {
         EFChar(self.0, self.1.clone())
     }
 
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
         EFResponse
     }

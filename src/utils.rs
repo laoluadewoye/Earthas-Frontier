@@ -52,6 +52,8 @@ pub mod component_str {
 
     // Core components
     pub const EFIDENTITY_STR: &'static str = "identity";
+    pub const EFROLE_STR: &'static str = "role";
+    pub const EFROLEVECTOR_STR: &'static str = "role_vector";
     pub const EFSECRET_STR: &'static str = "secret";
 }
 
@@ -87,6 +89,8 @@ pub mod versions {
 
     // Core components
     pub const EFIDENTITY_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFROLE_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFROLEVECTOR_VERSION: EFVersion = EFVersion(0, 0, 1);
     pub const EFSECRET_VERSION: EFVersion = EFVersion(0, 0, 1);
 }
 
@@ -313,7 +317,8 @@ pub mod generic_vector {
 
 pub mod byte_vector {
     use super::result::{EFOk, EFError};
-    use crate::elements::{EFByteRep, EFByteRepBuilder, EFVersion};
+    use crate::elements::EFVersion;
+    use crate::elements::byte_rep::{EFByteRep, EFByteRepBuilder};
     use super::generic_vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
 
     pub const BYTE_REP_NONE_OFFSET_ENCODING: usize = 0;

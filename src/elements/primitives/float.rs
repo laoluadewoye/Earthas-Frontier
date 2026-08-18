@@ -1,4 +1,3 @@
-
 use super::*;
 
 // #[derive(Debug)]
@@ -28,6 +27,14 @@ impl EFComponent for EFF32 {
 
     fn clone_component(&self) -> Self {
         EFF32(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
@@ -106,6 +113,14 @@ impl EFComponent for EFF64 {
 
     fn clone_component(&self) -> Self {
         EFF64(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {

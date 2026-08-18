@@ -1,4 +1,3 @@
-
 use super::*;
 
 #[derive(Debug)]
@@ -25,6 +24,14 @@ impl EFComponent for EFISize {
 
     fn clone_component(&self) -> Self {
         EFISize(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
@@ -105,6 +112,14 @@ impl EFComponent for EFI8 {
         EFI8(self.0, self.1.clone())
     }
 
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
         EFResponse
     }
@@ -181,6 +196,14 @@ impl EFComponent for EFI16 {
 
     fn clone_component(&self) -> Self {
         EFI16(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
@@ -261,6 +284,14 @@ impl EFComponent for EFI32 {
         EFI32(self.0, self.1.clone())
     }
 
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
         EFResponse
     }
@@ -339,6 +370,14 @@ impl EFComponent for EFI64 {
         EFI64(self.0, self.1.clone())
     }
 
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
+    }
+
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
         EFResponse
     }
@@ -415,6 +454,14 @@ impl EFComponent for EFI128 {
 
     fn clone_component(&self) -> Self {
         EFI128(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {

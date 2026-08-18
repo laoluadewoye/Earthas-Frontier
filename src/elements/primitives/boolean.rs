@@ -1,4 +1,3 @@
-
 use super::*;
 
 #[derive(Debug)]
@@ -25,6 +24,14 @@ impl EFComponent for EFBool {
 
     fn clone_component(&self) -> Self {
         EFBool(self.0, self.1.clone())
+    }
+
+    fn upgrade_component(older_componet: EFComponentTuple) {
+
+    }
+
+    fn downgrade_component(&self) {
+        
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
