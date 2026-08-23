@@ -1,5 +1,5 @@
-use crate::elements::{EFOk, EFError};
 use crate::elements::byte_rep::{EFByteRep, EFByteRepCompatibleEnum};
+use crate::utils::result::{EFOk, EFError};
 use crate::utils::generic_vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
 use crate::utils::byte_vector::{get_byte_vector_from_enum_and_string, get_enum_and_string_from_byte_vector};
 

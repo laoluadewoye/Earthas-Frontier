@@ -6,38 +6,61 @@ pub struct EFBool(pub bool, pub EFVersion);
 impl EFComponent for EFBool {
     type ComponentParams = bool;
 
-    fn new(params: Self::ComponentParams) -> Self {
+    fn create_new(params: Self::ComponentParams) -> Self {
         EFBool(params, EFBOOL_VERSION)
     }
 
-    fn build(params: Self::ComponentParams, version: EFVersion) -> Self {
+    fn create_from_compatible(params: Self::ComponentParams, version: EFVersion) -> Self {
         EFBool(params, version)
     }
 
-    fn get_component_str(&self) -> String {
-        String::from(EFBOOL_STR)
-    }
-
-    fn get_component_version(&self) -> EFVersion {
-        self.1.clone()
-    }
-
-    fn clone_component(&self) -> Self {
-        EFBool(self.0, self.1.clone())
-    }
-
-    fn upgrade_component(older_componet: EFComponentTuple) {
-
-    }
-
-    fn downgrade_component(&self) {
-        
-    }
-
-    fn handle_request(&self, request: &EFQuery) -> EFResponse {
-        EFResponse
+    fn create_from_older(older_component: EFComponentTuple) -> Option<Self> where Self: Sized {
+        // Compare versions
+        let relation_0_0_1: EFVersionRelation = older_component.version.get_relation(&EFVersion(0, 0, 1));
+        match relation_0_0_1 {
+            EFVersionRelation::GreaterThan | EFVersionRelation::EqualTo => {
+                
+            },
+            _ => 
+        }
     }
 }
+
+// impl EFComponent for EFBool {
+//     type ComponentParams = bool;
+
+//     fn new(params: Self::ComponentParams) -> Self {
+//         EFBool(params, EFBOOL_VERSION)
+//     }
+
+//     fn build(params: Self::ComponentParams, version: EFVersion) -> Self {
+//         EFBool(params, version)
+//     }
+
+//     fn get_component_str(&self) -> String {
+//         String::from(EFBOOL_STR)
+//     }
+
+//     fn get_component_version(&self) -> EFVersion {
+//         self.1.clone()
+//     }
+
+//     fn clone_component(&self) -> Self {
+//         EFBool(self.0, self.1.clone())
+//     }
+
+//     fn upgrade_component(older_componet: EFComponentTuple) {
+
+//     }
+
+//     fn downgrade_component(&self) {
+        
+//     }
+
+//     fn handle_request(&self, request: &EFQuery) -> EFResponse {
+//         EFResponse
+//     }
+// }
 
 impl EFByteRepCompatible for EFBool {
     fn to_byte_rep(&self) -> Result<EFOk<EFByteRep>, EFError> {

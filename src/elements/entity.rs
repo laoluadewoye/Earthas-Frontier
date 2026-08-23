@@ -49,6 +49,7 @@ pub struct EFEntityFile(String);
 
 pub trait EFEntity {
     type EntityType;
+    type ComponentType;
 
     // Create new entity
     fn new() -> Self::EntityType;
@@ -200,15 +201,40 @@ pub trait EFEntity {
         new_line: String,
         line_number: usize
     ) -> Result<EFOk<EFSuccess>, EFError>;
-    fn replace_in_file();
-    fn replace_range_in_file();
-    fn update_file();
-    fn delete_file();
+    fn replace_in_file(
+        &mut self,
+        current_id: &String,
+        path_name: &String,
+        old_phrase: &String,
+        new_phrase: String
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn replace_range_in_file(
+        &mut self,
+        current_id: &String,
+        path_name: &String,
+        old_range: (usize, usize),
+        new_phrase: String
+    ) -> Result<EFOk<EFSuccess>, EFError>;
+    fn update_file(
+        &mut self,
+        current_id: &String,
+        path_name: &String,
+        new_data: String
+    ) -> Result<EFOk<EFEntityFile>, EFError>;
+    fn delete_file(
+        &mut self,
+        current_id: &String,
+        path_name: &String,
+    ) -> Result<EFOk<EFEntityFile>, EFError>;
 
     // Work with entity's component
-    fn get_component();
-    fn get_mutable_component();
-    fn get_component_type(&self) -> String;
+    
+    fn get_component(&self, current_id: &String) -> Result<EFOk<&Self::ComponentType>, EFError>;
+    fn get_mutable_component(
+        &mut self, 
+        current_id: &String
+    ) -> Result<EFOk<&mut Self::ComponentType>, EFError>;
+    fn get_component_type(&self, current_id: &String) -> Result<EFOk<String>, EFError>;
     fn query_component();
 
     // NOT DONE WITH THIS
