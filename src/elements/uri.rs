@@ -1,7 +1,7 @@
-use crate::elements::byte_rep::{EFByteRep, EFByteRepCompatibleEnum};
+use crate::elements::byte_rep::EFByteVecCompatible;
 use crate::utils::result::{EFOk, EFError};
-use crate::utils::generic_vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
-use crate::utils::byte_vector::{get_byte_vector_from_enum_and_string, get_enum_and_string_from_byte_vector};
+use crate::utils::vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
+use crate::elements::byte_rep::enum_helper::*;
 
 #[derive(Debug)]
 pub enum EFURIAuthority {
@@ -10,14 +10,21 @@ pub enum EFURIAuthority {
     Connection(String)
 }
 
-impl EFByteRepCompatibleEnum for EFURIAuthority where Self: Sized {
-    fn get_byte_vec(&self) -> Vec<u8> {
+impl EFByteVecCompatible for EFURIAuthority where Self: Sized {
+    fn to_byte_vec(&self) -> Result<EFOk<Vec<u8>>, EFError> {
         match self {
-            EFURIAuthority::Global => vec![0u8],
-            EFURIAuthority::Local => vec![1u8],
-            EFURIAuthority::Connection(type_str) => {
-                get_byte_vector_from_enum_and_string(2u8, type_str)
-            }
+            EFURIAuthority::Global => Ok(EFOk{
+                value: vec![0u8], 
+                msg: String::from("Created byte vector for URI authority.")
+            }),
+            EFURIAuthority::Local => Ok(EFOk{
+                value: vec![1u8], 
+                msg: String::from("Created byte vector for URI authority.")
+            }),
+            EFURIAuthority::Connection(enum_str) => Ok(EFOk{
+                value: get_byte_vector_from_enum_and_string(2u8, enum_str), 
+                msg: String::from("Created byte vector for URI authority.")
+            })
         }
     }
 
@@ -64,15 +71,17 @@ impl EFURITarget {
     }
 }
 
-impl EFByteRepCompatibleEnum for EFURITarget where Self: Sized {
-    fn get_byte_vec(&self) -> Vec<u8> {
+impl EFByteVecCompatible for EFURITarget where Self: Sized {
+    fn to_byte_vec(&self) -> Result<EFOk<Vec<u8>>, EFError> {
         match self {
-            EFURITarget::ID(type_str) => {
-                get_byte_vector_from_enum_and_string(0u8, type_str)
-            },
-            EFURITarget::Name(type_str) => {
-                get_byte_vector_from_enum_and_string(1u8, type_str)
-            }
+            EFURITarget::ID(enum_str) => Ok(EFOk{
+                value: get_byte_vector_from_enum_and_string(0u8, enum_str), 
+                msg: String::from("Created byte vector for URI target.")
+            }),
+            EFURITarget::Name(enum_str) => Ok(EFOk{
+                value: get_byte_vector_from_enum_and_string(1u8, enum_str), 
+                msg: String::from("Created byte vector for URI target.")
+            })
         }
     }
 
@@ -107,16 +116,22 @@ pub enum EFURIPathComponent {
     Parent
 }
 
-impl EFByteRepCompatibleEnum for EFURIPathComponent where Self: Sized {
-    fn get_byte_vec(&self) -> Vec<u8> {
+impl EFByteVecCompatible for EFURIPathComponent where Self: Sized {
+    fn to_byte_vec(&self) -> Result<EFOk<Vec<u8>>, EFError> {
         match self {
-            EFURIPathComponent::System(type_enum) => {
+            EFURIPathComponent::System(enum_target) => {
                 let mut byte_vec: Vec<u8> = vec![0u8];
-                let mut type_vec: Vec<u8> = type_enum.get_byte_vec();
-                byte_vec.append(&mut type_vec);
-                byte_vec
+                let mut enum_target_vec: Vec<u8> = match enum_target.to_byte_vec() {
+                    Ok(v) => v.value,
+                    Err(e) => { return Err(e); }
+                };
+                byte_vec.append(&mut enum_target_vec);
+                Ok(EFOk{value: byte_vec, msg: String::from("Created byte vector for URI path component.")})
             },
-            EFURIPathComponent::Parent => vec![1u8]
+            EFURIPathComponent::Parent => Ok(EFOk{
+                value: vec![1u8], 
+                msg: String::from("Created byte vector for URI path component.")
+            })
         }
     }
 

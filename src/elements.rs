@@ -28,16 +28,17 @@ pub trait EFComponent: Clone {
 
     // Getter functions
     fn get_component_as_older(&self, old_version: &EFVersion) -> EFComponentTuple;
-    fn get_component_type(&self) -> &str;
     fn get_component_version(&self) -> &EFVersion;
+    fn get_component_type(&self) -> &str;
 
     // Query functions
     fn handle_request(&self, request: &EFQuery) -> EFResponse;
 }
 
 #[derive(Debug, Clone)]
-pub struct EFComponentTuple {
-    version: EFVersion,
-    attrs: Vec<String>,
-    values: Vec<String>
-}
+pub struct EFComponentTuple;
+// {
+//     version: EFVersion,
+//     attrs: Vec<String>,
+//     values: Vec<String>
+// }

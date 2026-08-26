@@ -1,28 +1,4 @@
-pub mod result {
-    #[derive(Debug)]
-    pub struct EFSuccess; //Means the function successfully ran without glaring issues
-
-    #[derive(Debug)]
-    pub struct EFOk<T> {
-        pub value: T,
-        pub msg: String
-    }
-
-    #[derive(Debug)]
-    pub struct EFError {
-        pub function: String,
-        pub line: String,
-        pub msg: String
-    }
-
-    impl EFError {
-        pub fn to_string(&self) -> String {
-            format!("{:?}", self)
-        }
-    }
-}
-
-pub mod component_str {
+pub mod component_types {
     // Unsigned integers
     pub const EFUSIZE_STR: &'static str = "usize";
     pub const EFU8_STR: &'static str = "u8";
@@ -57,41 +33,109 @@ pub mod component_str {
     pub const EFSECRET_STR: &'static str = "secret";
 }
 
-pub mod versions {
+pub mod component_versions {
     use crate::elements::EFVersion;
     
     // Unsigned integers
-    pub const EFUSIZE_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFU8_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFU16_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFU32_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFU64_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFU128_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFUSIZE_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFU8_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFU16_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFU32_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFU64_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFU128_VERSION: EFVersion = EFVersion(0, 1, 0);
 
     // Signed integers
-    pub const EFISIZE_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFI8_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFI16_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFI32_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFI64_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFI128_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFISIZE_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFI8_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFI16_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFI32_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFI64_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFI128_VERSION: EFVersion = EFVersion(0, 1, 0);
 
     // Signed floats
-    pub const EFF32_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFF64_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFF32_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFF64_VERSION: EFVersion = EFVersion(0, 1, 0);
 
     // Other primitives
-    pub const EFBOOL_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFCHAR_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFBOOL_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFCHAR_VERSION: EFVersion = EFVersion(0, 1, 0);
 
     // Common components
-    pub const EFSTRING_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFSTRING_VERSION: EFVersion = EFVersion(0, 1, 0);
 
     // Core components
-    pub const EFIDENTITY_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFROLE_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFROLEVECTOR_VERSION: EFVersion = EFVersion(0, 0, 1);
-    pub const EFSECRET_VERSION: EFVersion = EFVersion(0, 0, 1);
+    pub const EFIDENTITY_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFROLE_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFROLEVECTOR_VERSION: EFVersion = EFVersion(0, 1, 0);
+    pub const EFSECRET_VERSION: EFVersion = EFVersion(0, 1, 0);
+}
+
+pub mod constants {
+    pub const EMPTY_STR_SLICE: &'static str = "";
+}
+
+pub mod result {
+    #[derive(Debug)]
+    pub struct EFSuccess; //Means the function successfully ran without glaring issues
+
+    #[derive(Debug)]
+    pub struct EFOk<T> {
+        pub value: T,
+        pub msg: String
+    }
+
+    #[derive(Debug)]
+    pub struct EFError {
+        pub function: String,
+        pub line: String,
+        pub msg: String
+    }
+
+    impl EFError {
+        pub fn to_string(&self) -> String {
+            format!("{:?}", self)
+        }
+    }
+}
+
+pub mod general {
+    use super::result::{EFOk, EFError};
+    use sha2::{Digest, Sha256, Sha512};
+
+    pub fn get_hash(string_vec: Vec<&String>, entity_hash: &String) -> Result<EFOk<String>, EFError> {
+        let hash_bytes: Vec<u8> = match entity_hash.to_lowercase().as_str() {
+            "sha256" | "" => {
+                let mut hasher: Sha256 = Sha256::new();
+                for s in string_vec {
+                    Digest::update(&mut hasher, s.as_bytes());
+                }
+                hasher.finalize().to_vec()
+            },
+            "sha512" => {
+                let mut hasher: Sha512 = Sha512::new();
+                for s in string_vec {
+                    Digest::update(&mut hasher, s.as_bytes());
+                }
+                hasher.finalize().to_vec()
+            },
+            _ => {
+                return Err(EFError{
+                    function: String::from("get_hash"), 
+                    line: String::from("entity_hash.to_lowercase().as_str()"), 
+                    msg: format!("An incorrect value was used for entity_hash key.")
+                });
+            }
+        };
+
+        match String::from_utf8(hash_bytes) {
+            Ok(h) => Ok(EFOk { value: h, msg: String::from("Created hash.") }),
+            Err(_) => Err(EFError{
+                function: String::from("get_hash"), 
+                line: String::from("String::from_utf8(hash_bytes)"), 
+                msg: format!("get_hash failed to make a string from a vector.")
+            })
+        }
+    }
 }
 
 pub mod json {
@@ -219,47 +263,7 @@ pub mod os {
     }
 }
 
-pub mod general {
-    use super::result::{EFOk, EFError};
-    use sha2::{Digest, Sha256, Sha512};
-
-    pub fn get_hash(string_vec: Vec<&String>, entity_hash: &String) -> Result<EFOk<String>, EFError> {
-        let hash_bytes: Vec<u8> = match entity_hash.to_lowercase().as_str() {
-            "sha256" | "" => {
-                let mut hasher: Sha256 = Sha256::new();
-                for s in string_vec {
-                    Digest::update(&mut hasher, s.as_bytes());
-                }
-                hasher.finalize().to_vec()
-            },
-            "sha512" => {
-                let mut hasher: Sha512 = Sha512::new();
-                for s in string_vec {
-                    Digest::update(&mut hasher, s.as_bytes());
-                }
-                hasher.finalize().to_vec()
-            },
-            _ => {
-                return Err(EFError{
-                    function: String::from("get_hash"), 
-                    line: String::from("entity_hash.to_lowercase().as_str()"), 
-                    msg: format!("An incorrect value was used for entity_hash key.")
-                });
-            }
-        };
-
-        match String::from_utf8(hash_bytes) {
-            Ok(h) => Ok(EFOk { value: h, msg: String::from("Created hash.") }),
-            Err(_) => Err(EFError{
-                function: String::from("get_hash"), 
-                line: String::from("String::from_utf8(hash_bytes)"), 
-                msg: format!("get_hash failed to make a string from a vector.")
-            })
-        }
-    }
-}
-
-pub mod generic_vector {
+pub mod vector {
     use super::result::{EFOk, EFError};
 
     pub fn get_index_from_generic_vector<T: Clone>(v: &Vec<T>, i: usize) -> Result<EFOk<T>, EFError> {
@@ -313,218 +317,15 @@ pub mod generic_vector {
             })
         }
     }
-}
 
-pub mod byte_vector {
-    use super::result::{EFOk, EFError};
-    use crate::elements::EFVersion;
-    use crate::elements::byte_rep::{EFByteRep, EFByteRepBuilder};
-    use super::generic_vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
-
-    pub const BYTE_REP_NONE_OFFSET_ENCODING: usize = 0;
-
-    pub fn get_string_from_byte_vector(v: Vec<u8>) -> Result<EFOk<String>, EFError> {
-        match String::from_utf8(v) {
-            Ok(s) => Ok(EFOk { value: s, msg: String::from("Created string from byte vector.") }),
+    pub fn get_string_from_byte_vector(v: &Vec<u8>) -> Result<EFOk<&str>, EFError> {
+        match str::from_utf8(v.as_slice()) {
+            Ok(s) => Ok(EFOk{ value: s, msg: String::from("Created string from byte vector.") }),
             Err(_) => Err(EFError{
                 function: String::from("get_string_from_byte_vector"), 
-                line: String::from("String::from_utf8(v)"), 
+                line: String::from("str::from_utf8(v.as_slice())"), 
                 msg: String::from("Passed in byte vector is not compatible with UTF-8.")
             })
         }
-    }
-
-    pub fn get_byte_vector_from_enum_and_string(type_byte: u8, type_str: &String) -> Vec<u8> {
-        let mut byte_vec: Vec<u8> = vec![type_byte];
-        let mut type_str_vec: Vec<u8> = type_str.clone().into_bytes();
-        byte_vec.append(&mut type_str_vec);
-        byte_vec
-    }
-
-    pub fn get_enum_and_string_from_byte_vector(byte_vec: &Vec<u8>) -> Result<EFOk<(u8, String)>, EFError> {
-        let type_byte: u8 = match get_index_from_generic_vector(byte_vec, 0) {
-            Ok(index_object) => index_object.value,
-            Err(e) => { return Err(e); }
-        };
-
-        if byte_vec.len() == 1 {
-            Ok(EFOk{
-                value: (type_byte, String::from("")), 
-                msg: String::from("Returned type byte and empty string.")
-            })
-        }
-        else {
-            match get_index_range_from_generic_vector(byte_vec, Some(1), None) {
-                Ok(index_range) => match get_string_from_byte_vector(index_range.value) {
-                    Ok(s) => Ok(EFOk{
-                        value: (type_byte, s.value),
-                        msg: String::from("Returned type byte and non-empty string.")
-                    }),
-                    Err(e) => Err(e)
-                },
-                Err(e) => Err(e)
-            }
-        }
-    }
-
-    pub fn get_byte_rep_from_builder(brb: &mut EFByteRepBuilder) -> Result<EFOk<EFByteRep>, EFError> {
-        // Create a new bytes vector
-        let attribute_count: usize = brb.byte_vectors.len() + 2;
-        let mut bytes: Vec<u8> = vec![attribute_count as u8];
-
-        // Create a length vector
-        let mut lengths: Vec<usize> = vec![brb.version_vector.len(), brb.component_vector.len()];
-        let mut byte_lengths: Vec<usize> = brb.byte_vectors.iter().map(|v| v.len()).collect();
-        lengths.append(&mut byte_lengths);
-
-        // Use lengths to create offsets
-        let mut cur_offset: u8 = brb.byte_vectors.len() as u8;
-        for i in 0..brb.byte_vectors.len() {
-            match lengths[i] {
-                BYTE_REP_NONE_OFFSET_ENCODING => { bytes.push(0u8); },
-                _ => { bytes.push(cur_offset); }
-            }
-            cur_offset = cur_offset + lengths[i] as u8;
-        }
-
-        // Add metadata
-        bytes.append(&mut brb.version_vector);
-        bytes.append(&mut brb.component_vector);
-
-        // Add data
-        for i in 0..brb.byte_vectors.len() {
-            let mut byte_vector: &mut Vec<u8> = match brb.byte_vectors.get_mut(i) {
-                Some(bv) => bv,
-                None => {
-                    return Err(EFError{
-                        function: String::from("get_byte_rep_from_builder"), 
-                        line: String::from("brb.byte_vectors.get_mut(i)"), 
-                        msg: format!("Got a bad index for byte vector set.")
-                    });
-                }
-            };
-            bytes.append(&mut byte_vector);
-        }
-
-        // Return byte rep
-        Ok(EFOk{
-            value: EFByteRep { bytes },
-            msg: String::from("Created byte rep.")
-        })
-    }
-
-    pub fn get_builder_from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<EFByteRepBuilder>, EFError> {
-        // Get the attribute count
-        let attribute_count: usize = match get_index_from_generic_vector(&byte_rep.bytes, 0) {
-            Ok(a) => a.value as usize,
-            Err(e) => { return Err(e); }
-        };
-
-        // Create empty byte vector set
-        let mut byte_vectors: Vec<Vec<u8>> = Vec::new();
-
-        // One loop to grab the offsets
-        let mut offsets: Vec<usize> = Vec::new();
-        for i in 0..attribute_count {
-            offsets.push(byte_rep.bytes[1+i] as usize);
-        }
-
-        // Another loop to get all but the last vector
-        for i in 0..(attribute_count-1) {
-            // Check if the offset is set to the None encoding
-            if offsets[i] == BYTE_REP_NONE_OFFSET_ENCODING {
-                byte_vectors.push(Vec::new());
-            }
-            else if let Some(v) = byte_rep.bytes.get(offsets[i]..offsets[i+1]) {
-                byte_vectors.push(v.to_vec());
-            }
-            else {
-                return Err(EFError{
-                    function: String::from("get_byte_vectors_from_byte_rep"), 
-                    line: String::from("byte_rep.bytes.get(offsets[i]..offsets[i+1])"), 
-                    msg: format!("Got a bad index for byte rep.")
-                });
-            }
-        }
-
-        // Add the last vector
-        if offsets[attribute_count-1] == BYTE_REP_NONE_OFFSET_ENCODING {
-            byte_vectors.push(Vec::new());
-        }
-        else if let Some(v) = byte_rep.bytes.get(offsets[attribute_count-1]..) {
-            byte_vectors.push(v.to_vec());
-        }
-        else {
-            return Err(EFError{
-                function: String::from("get_byte_vectors_from_byte_rep"), 
-                line: String::from("byte_rep.bytes.get(offsets[i]..offsets[i+1])"), 
-                msg: format!("Got a bad index for byte rep.")
-            });
-        }
-
-        // Deconstruct vectors into a builder
-        let version_vector: Vec<u8> = byte_vectors.remove(0);
-        let component_vector: Vec<u8> = byte_vectors.remove(0);
-
-        Ok(EFOk{
-            value: EFByteRepBuilder { byte_vectors, version_vector, component_vector },
-            msg: String::from("Created byte vector set.")
-        })
-    }
-
-    pub fn check_component_and_get_version_from_builder(
-        builder: &EFByteRepBuilder, component_str: &str
-    ) -> Result<EFOk<EFVersion>, EFError> {
-        // Check the component
-        let component: String = match get_string_from_byte_vector(builder.component_vector.clone()) {
-            Ok(s) => s.value,
-            Err(e) => { return Err(e); }
-        };
-        if !component.eq(component_str) {
-            return Err(EFError{
-                function: String::from("extract_component_and_version_from_builder"), 
-                line: format!("!component.eq(\"{}\")", component_str), 
-                msg: format!("Component is not set to {}.", component_str)
-            });
-        }
-
-        // Get the version
-        match builder.version_vector.len() == 3 {
-            true => Ok(EFOk{
-                value: EFVersion(
-                    builder.version_vector[0], 
-                    builder.version_vector[1], 
-                    builder.version_vector[2]
-                ),
-                msg: format!("Returned {}'s version.", component_str)
-            }),
-            false => Err(EFError{
-                function: String::from("extract_component_and_version_from_builder"), 
-                line: String::from("builder.version_vector.len() == 3"), 
-                msg: format!("Could not parse version for {}.", component_str)
-            })
-        }
-    }
-
-    pub fn get_byte_vectors_and_version_from_byte_rep(
-        byte_rep: &EFByteRep, component_str: &str
-    ) -> Result<EFOk<(Vec<Vec<u8>>, EFVersion)>, EFError> {
-        // Get the vectors for each attribute
-        let builder: EFByteRepBuilder = match get_builder_from_byte_rep(byte_rep) {
-            Ok(b) => b.value,
-            Err(e) => { return Err(e); }
-        };
-
-        // Check the component and get the version
-        let version: EFVersion = match check_component_and_get_version_from_builder(&builder, component_str) {
-            Ok(v) => v.value,
-            Err(e) => { return Err(e); }
-        };
-
-        // Return byte vectors and version directly
-        Ok(EFOk{
-            value: (builder.byte_vectors, version),
-            msg: format!("Returned {}'s attributes and version.", component_str)
-        })
     }
 }

@@ -4,14 +4,9 @@ use crate::elements::byte_rep::*;
 use crate::elements::uri::{EFURIString, EFQuery, EFResponse};
 use crate::elements::common::string::EFString;
 use crate::utils::result::{EFOk, EFError};
-use crate::utils::versions::*;
-use crate::utils::component_str::*;
-use crate::utils::generic_vector::get_index_from_generic_vector;
-use crate::utils::byte_vector::{
-    get_string_from_byte_vector,
-    get_byte_vectors_and_version_from_byte_rep,
-    get_byte_rep_from_builder
-};
+use crate::utils::component_versions::*;
+use crate::utils::component_types::*;
+use crate::utils::vector::{get_index_from_generic_vector, get_string_from_byte_vector};
 
 pub mod identity;
 pub mod role;

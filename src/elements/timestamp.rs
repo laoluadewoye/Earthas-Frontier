@@ -1,5 +1,5 @@
 use crate::utils::result::{EFOk, EFError};
-use crate::utils::byte_vector::get_string_from_byte_vector;
+use crate::utils::vector::get_string_from_byte_vector;
 use chrono::{DateTime, Utc, FixedOffset};
 
 #[derive(Debug, Clone)]
@@ -77,8 +77,8 @@ impl EFUTCTimestamp {
     }
 
     pub fn from_byte_vector(byte_vector: Vec<u8>) -> Result<EFOk<Self>, EFError> {
-        match get_string_from_byte_vector(byte_vector) {
-            Ok(s) => match EFUTCTimestamp::from_string(s.value.as_str()) {
+        match get_string_from_byte_vector(&byte_vector) {
+            Ok(s) => match EFUTCTimestamp::from_string(s.value) {
                 Ok(ts) => Ok(EFOk{
                     value: ts.value, 
                     msg: String::from("Parsed byte vector into UTC timestamp.")

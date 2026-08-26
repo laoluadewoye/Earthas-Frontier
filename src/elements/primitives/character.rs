@@ -1,38 +1,36 @@
 use super::*;
 use std::str::from_utf8 as str_slice_from_utf8;
 
-#[derive(Debug)]
+const EFCHAR_BUFFER_LEN: usize = 5;
+
+#[derive(Debug, Clone)]
 pub struct EFChar(pub char, pub EFVersion);
 
 impl EFComponent for EFChar {
     type ComponentParams = char;
 
-    fn new(params: Self::ComponentParams) -> Self {
+    fn create_new(params: Self::ComponentParams) -> Self {
         EFChar(params, EFCHAR_VERSION)
     }
 
-    fn build(params: Self::ComponentParams, version: EFVersion) -> Self {
+    fn create_from_compatible(params: Self::ComponentParams, version: EFVersion) -> Self {
         EFChar(params, version)
     }
 
-    fn get_component_str(&self) -> String {
-        String::from(EFCHAR_STR)
+    fn create_from_older(older_component: &EFComponentTuple) -> Option<Self> where Self: Sized {
+        None
     }
 
-    fn get_component_version(&self) -> EFVersion {
-        self.1.clone()
+    fn get_component_as_older(&self, old_version: &EFVersion) -> EFComponentTuple {
+        EFComponentTuple
     }
 
-    fn clone_component(&self) -> Self {
-        EFChar(self.0, self.1.clone())
+    fn get_component_version(&self) -> &EFVersion {
+        &self.1
     }
 
-    fn upgrade_component(older_componet: EFComponentTuple) {
-
-    }
-
-    fn downgrade_component(&self) {
-        
+    fn get_component_type(&self) -> &str {
+        EFCHAR_STR
     }
 
     fn handle_request(&self, request: &EFQuery) -> EFResponse {
@@ -40,36 +38,38 @@ impl EFComponent for EFChar {
     }
 }
 
+
 impl EFByteRepCompatible for EFChar {
     fn to_byte_rep(&self) -> Result<EFOk<EFByteRep>, EFError> {
         // Create vectors from metadata
         let version_vector: Vec<u8> = vec![self.1.0, self.1.1, self.1.2];
-        let component_vector: Vec<u8> = self.get_component_str().into_bytes();
+        let type_vector: Vec<u8> = self.get_component_type().as_bytes().to_vec();
 
         // Create vectors from attributes
-        let mut char_buffer: [u8; 4] = [0; 4];
-        self.0.encode_utf8(&mut char_buffer);
-        let mut char_bytes: Vec<u8> = char_buffer.to_vec();
-        char_bytes.push(self.0.len_utf8() as u8);
+        let mut char_buffer: [u8; EFCHAR_BUFFER_LEN] = [0; EFCHAR_BUFFER_LEN];
+        let char_buffer_subset = self.0.encode_utf8(&mut char_buffer);
+        char_buffer[EFCHAR_BUFFER_LEN-1] = char_buffer_subset.len() as u8;
+        let char_bytes: Vec<u8> = char_buffer.to_vec();
 
         // Return byte rep
-        let mut builder: EFByteRepBuilder = EFByteRepBuilder { 
-            byte_vectors: vec![char_bytes], version_vector, component_vector
+        let mut builder: EFByteRepBuilder = EFByteRepBuilder {
+            version_vector, type_vector, byte_vectors: vec![char_bytes]
         };
-        get_byte_rep_from_builder(&mut builder)
+        builder.create_byte_rep()
     }
 
     fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
-        // Get the byte vectors and version
-        let (byte_vectors, version) = match get_byte_vectors_and_version_from_byte_rep(byte_rep, EFCHAR_STR) {
-            Ok(bv_v) => (bv_v.value.0, bv_v.value.1),
+        // Get the version and vectors for attributes
+        let (version, byte_vectors): (EFVersion, Vec<Vec<u8>>) = match 
+        EFByteRepBuilder::validate_br_for_ver_and_attrs(byte_rep, EFCHAR_STR) {
+            Ok(v_bvs) => (v_bvs.value.0, v_bvs.value.1),
             Err(e) => { return Err(e); }
         };
 
-        // Create the value
+        // Create the component
         match get_index_from_generic_vector(&byte_vectors, 0) {
             Ok(b_vec) => {
-                let b_arr: [u8; 5] = match b_vec.value.try_into() {
+                let b_arr: [u8; EFCHAR_BUFFER_LEN] = match b_vec.value.try_into() {
                     Ok(b) => b,
                     Err(_) => {
                         return Err(EFError{
@@ -80,7 +80,7 @@ impl EFByteRepCompatible for EFChar {
                     }
                 };
 
-                let char_len: usize = b_arr[4] as usize;
+                let char_len: usize = b_arr[EFCHAR_BUFFER_LEN-1] as usize;
                 let char_str: &str = match str_slice_from_utf8(&b_arr[..char_len]) {
                     Ok(s_slice) => s_slice,
                     Err(_) => {
