@@ -1,5 +1,5 @@
 use crate::elements::byte_rep::EFByteVecCompatible;
-use crate::utils::result::{EFOk, EFError};
+use crate::utils::result::{EFOk, EFError, EFResult};
 use crate::utils::vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
 use crate::elements::byte_rep::enum_helper::*;
 
@@ -11,7 +11,7 @@ pub enum EFURIAuthority {
 }
 
 impl EFByteVecCompatible for EFURIAuthority where Self: Sized {
-    fn to_byte_vec(&self) -> Result<EFOk<Vec<u8>>, EFError> {
+    fn to_byte_vec(&self) -> EFResult<Vec<u8>> {
         match self {
             EFURIAuthority::Global => Ok(EFOk{
                 value: vec![0u8], 
@@ -28,7 +28,7 @@ impl EFByteVecCompatible for EFURIAuthority where Self: Sized {
         }
     }
 
-    fn from_byte_vec(byte_vec: &Vec<u8>) -> Result<EFOk<Self>, EFError> where Self: Sized {
+    fn from_byte_vec(byte_vec: &Vec<u8>) -> EFResult<Self> where Self: Sized {
         let (type_byte, type_str) = match get_enum_and_string_from_byte_vector(byte_vec) {
             Ok(res_tuple) => res_tuple.value,
             Err(e) => { return Err(e); }
@@ -72,7 +72,7 @@ impl EFURITarget {
 }
 
 impl EFByteVecCompatible for EFURITarget where Self: Sized {
-    fn to_byte_vec(&self) -> Result<EFOk<Vec<u8>>, EFError> {
+    fn to_byte_vec(&self) -> EFResult<Vec<u8>> {
         match self {
             EFURITarget::ID(enum_str) => Ok(EFOk{
                 value: get_byte_vector_from_enum_and_string(0u8, enum_str), 
@@ -85,7 +85,7 @@ impl EFByteVecCompatible for EFURITarget where Self: Sized {
         }
     }
 
-    fn from_byte_vec(byte_vec: &Vec<u8>) -> Result<EFOk<Self>, EFError> where Self: Sized {
+    fn from_byte_vec(byte_vec: &Vec<u8>) -> EFResult<Self> where Self: Sized {
         let (type_byte, type_str) = match get_enum_and_string_from_byte_vector(byte_vec) {
             Ok(res_tuple) => res_tuple.value,
             Err(e) => { return Err(e); }
@@ -117,7 +117,7 @@ pub enum EFURIPathComponent {
 }
 
 impl EFByteVecCompatible for EFURIPathComponent where Self: Sized {
-    fn to_byte_vec(&self) -> Result<EFOk<Vec<u8>>, EFError> {
+    fn to_byte_vec(&self) -> EFResult<Vec<u8>> {
         match self {
             EFURIPathComponent::System(enum_target) => {
                 let mut byte_vec: Vec<u8> = vec![0u8];
@@ -135,7 +135,7 @@ impl EFByteVecCompatible for EFURIPathComponent where Self: Sized {
         }
     }
 
-    fn from_byte_vec(byte_vec: &Vec<u8>) -> Result<EFOk<Self>, EFError> where Self: Sized {
+    fn from_byte_vec(byte_vec: &Vec<u8>) -> EFResult<Self> where Self: Sized {
         let type_byte: u8 = match get_index_from_generic_vector(byte_vec, 0) {
             Ok(index_object) => index_object.value,
             Err(e) => { return Err(e); }
@@ -225,7 +225,14 @@ impl EFURI {
 }
 
 #[derive(Debug)]
-pub struct EFQuery;
+pub enum EFComponentProcedure {
+    GetComponentAsOlder,
+    GetComponentVersion,
+    CustomProcedure(u8)
+}
+
+#[derive(Debug)]
+pub struct EFRequest;
 // {
 //     sending_entity: EFID,
 //     reciving_entity: EFID,
@@ -237,5 +244,5 @@ pub struct EFResponse;
 // {
 //     sending_entity: EFID,
 //     reciving_entity: EFID,
-//     response: Vec<Result<EFOk<EFByteRep>, EFError>>
+//     response: Vec<EFResult<EFByteRep>>
 // }

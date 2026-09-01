@@ -6,8 +6,7 @@ pub mod components;
 pub mod timestamp;
 pub mod byte_rep;
 pub mod rule;
-
-use uri::{EFQuery, EFResponse};
+pub mod file;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EFVersion(pub u8, pub u8, pub u8);
@@ -18,8 +17,22 @@ impl EFVersion {
     pub fn get_patch(&self) -> u8 { self.2 }
 }
 
+#[derive(Debug, Clone)]
+pub struct EFComponentTuple;
+// {
+//     version: EFVersion,
+//     attrs: Vec<String>,
+//     values: Vec<String>
+// }
+
+
+pub trait EFComponentRequest {}
+pub trait EFComponentResponse {}
+
 pub trait EFComponent: Clone {
     type ComponentParams;
+    type ComponentRequestType: EFComponentRequest;
+    type ComponentResponseType: EFComponentResponse;
     
     // Create functions
     fn create_new(params: Self::ComponentParams) -> Self;
@@ -32,13 +45,5 @@ pub trait EFComponent: Clone {
     fn get_component_type(&self) -> &str;
 
     // Query functions
-    fn handle_request(&self, request: &EFQuery) -> EFResponse;
+    fn handle_request(&self, request: &Self::ComponentRequestType) -> Self::ComponentResponseType;
 }
-
-#[derive(Debug, Clone)]
-pub struct EFComponentTuple;
-// {
-//     version: EFVersion,
-//     attrs: Vec<String>,
-//     values: Vec<String>
-// }

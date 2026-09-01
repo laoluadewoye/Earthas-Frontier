@@ -96,13 +96,15 @@ pub mod result {
             format!("{:?}", self)
         }
     }
+
+    pub type EFResult<T> = Result<EFOk<T>, EFError>;
 }
 
 pub mod general {
-    use super::result::{EFOk, EFError};
+    use super::result::{EFOk, EFError, EFResult};
     use sha2::{Digest, Sha256, Sha512};
 
-    pub fn get_hash(string_vec: Vec<&String>, entity_hash: &String) -> Result<EFOk<String>, EFError> {
+    pub fn get_hash(string_vec: Vec<&String>, entity_hash: &String) -> EFResult<String> {
         let hash_bytes: Vec<u8> = match entity_hash.to_lowercase().as_str() {
             "sha256" | "" => {
                 let mut hasher: Sha256 = Sha256::new();
@@ -139,12 +141,12 @@ pub mod general {
 }
 
 pub mod json {
-    use super::result::{EFOk, EFError};
+    use super::result::{EFOk, EFError, EFResult};
     use std::{io::Read, path::Path};
     use std::fs::File;
     use serde_json::{Value as JSONValue, from_str as json_from_str};
 
-    pub fn load_json_from_file(file_str: &String) -> Result<EFOk<JSONValue>, EFError> {
+    pub fn load_json_from_file(file_str: &String) -> EFResult<JSONValue> {
         // Create a path
         let file_path: &Path = Path::new(file_str.as_str());
 
@@ -188,13 +190,13 @@ pub mod json {
 }
 
 pub mod os {
-    use super::result::{EFSuccess, EFOk, EFError};
+    use super::result::{EFSuccess, EFOk, EFError, EFResult};
     use std::env::consts::OS;
     use std::env::var as env_var;
     use std::path::Path;
     use std::fs::{create_dir, create_dir_all};
 
-    pub fn get_os_default_folder() -> Result<EFOk<String>, EFError> {
+    pub fn get_os_default_folder() -> EFResult<String> {
         match OS {
             "windows" => {
                 match env_var("APPDATA") {
@@ -226,7 +228,7 @@ pub mod os {
         }
     }
 
-    pub fn create_folder(path_str: &String, cfinp: &String) -> Result<EFOk<EFSuccess>, EFError> {
+    pub fn create_folder(path_str: &String, cfinp: &String) -> EFResult<EFSuccess> {
         let path: &Path = Path::new(path_str.as_str());
         match path.is_dir() {
             false => {
@@ -264,9 +266,9 @@ pub mod os {
 }
 
 pub mod vector {
-    use super::result::{EFOk, EFError};
+    use super::result::{EFOk, EFError, EFResult};
 
-    pub fn get_index_from_generic_vector<T: Clone>(v: &Vec<T>, i: usize) -> Result<EFOk<T>, EFError> {
+    pub fn get_index_from_generic_vector<T: Clone>(v: &Vec<T>, i: usize) -> EFResult<T> {
         match v.get(i) {
             Some(i_v) => Ok(EFOk { 
                 value: i_v.clone(), 
@@ -284,7 +286,7 @@ pub mod vector {
         v: &Vec<T>, 
         start: Option<usize>, 
         end: Option<usize>
-    ) -> Result<EFOk<Vec<T>>, EFError> {
+    ) -> EFResult<Vec<T>> {
         let (r, s, e) = match (start, end) {
             // Get only between the bounds
             (Some(s), Some(e)) => (s..e, s, e),
@@ -318,7 +320,7 @@ pub mod vector {
         }
     }
 
-    pub fn get_string_from_byte_vector(v: &Vec<u8>) -> Result<EFOk<&str>, EFError> {
+    pub fn get_string_from_byte_vector(v: &Vec<u8>) -> EFResult<&str> {
         match str::from_utf8(v.as_slice()) {
             Ok(s) => Ok(EFOk{ value: s, msg: String::from("Created string from byte vector.") }),
             Err(_) => Err(EFError{

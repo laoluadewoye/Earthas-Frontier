@@ -2,9 +2,11 @@
 name = "earthas-frontier"
 version = "0.1.0"
 edition = "2024"
+description = "A database for storing and connecting distributed databases."
 
 [dependencies]
 serde_json = "1.0.151"
 chrono = "0.4.45"
 sha2 = "0.11.0"
 hex-literal = "1.1.0"
+regex = "1.13.1"

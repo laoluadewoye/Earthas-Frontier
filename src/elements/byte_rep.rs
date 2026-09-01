@@ -59,7 +59,7 @@ pub struct EFByteRepBuilder {
 }
 
 impl EFByteRepBuilder {
-    pub fn create_byte_rep(&mut self) -> Result<EFOk<EFByteRep>, EFError> {
+    pub fn create_byte_rep(&mut self) -> EFResult<EFByteRep> {
         // Create a new bytes vector
         let attribute_count: usize = self.byte_vectors.len() + BYTE_REP_METADATA_COUNT;
         let mut bytes: Vec<u8> = vec![attribute_count as u8];
@@ -105,7 +105,7 @@ impl EFByteRepBuilder {
         })
     }
 
-    pub fn new_from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<EFByteRepBuilder>, EFError> {
+    pub fn new_from_byte_rep(byte_rep: &EFByteRep) -> EFResult<EFByteRepBuilder> {
         // Get the attribute count
         let attribute_count: usize = match get_index_from_generic_vector(&byte_rep.0, 0) {
             Ok(a) => a.value as usize,
@@ -155,7 +155,7 @@ impl EFByteRepBuilder {
         })
     }
 
-    pub fn validate_component_type(&self, component_type: &str) -> Result<EFOk<EFSuccess>, EFError> {
+    pub fn validate_component_type(&self, component_type: &str) -> EFResult<EFSuccess> {
         match get_string_from_byte_vector(&self.type_vector) {
             Ok(test_type) => match test_type.value.eq(component_type) {
                 true => Ok(EFOk{value: EFSuccess, msg: format!("Component is type of {}.", component_type)}),
@@ -169,7 +169,7 @@ impl EFByteRepBuilder {
         }
     }
 
-    pub fn get_version(&self) -> Result<EFOk<EFVersion>, EFError> {
+    pub fn get_version(&self) -> EFResult<EFVersion> {
         match self.version_vector.len() == 3 {
             true => Ok(EFOk{
                 value: EFVersion(self.version_vector[0], self.version_vector[1], self.version_vector[2]),
@@ -185,7 +185,7 @@ impl EFByteRepBuilder {
 
     pub fn validate_br_for_ver_and_attrs(
         byte_rep: &EFByteRep, component_type: &str
-    ) -> Result<EFOk<(EFVersion, Vec<Vec<u8>>)>, EFError> {
+    ) -> EFResult<(EFVersion, Vec<Vec<u8>>)> {
         // Get the builder and validate it
         let builder: EFByteRepBuilder = match EFByteRepBuilder::new_from_byte_rep(byte_rep) {
             Ok(b) => b.value,
@@ -212,13 +212,13 @@ impl EFByteRepBuilder {
 }
 
 pub trait EFByteRepCompatible {
-    fn to_byte_rep(&self) -> Result<EFOk<EFByteRep>, EFError>;
-    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> where Self: Sized;
+    fn to_byte_rep(&self) -> EFResult<EFByteRep>;
+    fn from_byte_rep(byte_rep: &EFByteRep) -> EFResult<Self> where Self: Sized;
 }
 
 pub trait EFByteVecCompatible {
-    fn to_byte_vec(&self) -> Result<EFOk<Vec<u8>>, EFError>;
-    fn from_byte_vec(byte_vector: &Vec<u8>) -> Result<EFOk<Self>, EFError> where Self: Sized;
+    fn to_byte_vec(&self) -> EFResult<Vec<u8>>;
+    fn from_byte_vec(byte_vector: &Vec<u8>) -> EFResult<Self> where Self: Sized;
 }
 
 pub mod enum_helper {
@@ -231,7 +231,7 @@ pub mod enum_helper {
         byte_vector
     }
 
-    pub fn get_enum_and_string_from_byte_vector(byte_vector: &Vec<u8>) -> Result<EFOk<(u8, String)>, EFError> {
+    pub fn get_enum_and_string_from_byte_vector(byte_vector: &Vec<u8>) -> EFResult<(u8, String)> {
         let enum_byte: u8 = match get_index_from_generic_vector(byte_vector, 0) {
             Ok(index_object) => index_object.value,
             Err(e) => { return Err(e); }

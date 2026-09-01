@@ -1,4 +1,4 @@
-use crate::utils::result::{EFOk, EFError};
+use crate::utils::result::{EFOk, EFError, EFResult};
 use crate::utils::vector::get_string_from_byte_vector;
 use chrono::{DateTime, Utc, FixedOffset};
 
@@ -20,7 +20,7 @@ impl EFUTCTimestamp {
         &self, 
         hemisphere: EFUTCOffsetHemisphere, 
         offset_hours: i32, offset_minutes: i32
-    ) -> Result<EFOk<DateTime<FixedOffset>>, EFError> {
+    ) -> EFResult<DateTime<FixedOffset>> {
         let offset_seconds: i32 = offset_hours * 3600 + offset_minutes * 60;
         let (offset, hemisphere_str) = match hemisphere {
             EFUTCOffsetHemisphere::East => match FixedOffset::east_opt(offset_seconds) {
@@ -62,7 +62,7 @@ impl EFUTCTimestamp {
         self.to_string().into_bytes()
     }
 
-    pub fn from_string(s: &str) -> Result<EFOk<Self>, EFError> {
+    pub fn from_string(s: &str) -> EFResult<Self> {
         match DateTime::parse_from_rfc3339(s) {
             Ok(d) => Ok(EFOk{
                 value: EFUTCTimestamp(d.to_utc()), 
@@ -76,7 +76,7 @@ impl EFUTCTimestamp {
         }
     }
 
-    pub fn from_byte_vector(byte_vector: Vec<u8>) -> Result<EFOk<Self>, EFError> {
+    pub fn from_byte_vector(byte_vector: Vec<u8>) -> EFResult<Self> {
         match get_string_from_byte_vector(&byte_vector) {
             Ok(s) => match EFUTCTimestamp::from_string(s.value) {
                 Ok(ts) => Ok(EFOk{

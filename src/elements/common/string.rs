@@ -30,13 +30,13 @@ impl EFComponent for EFString {
         EFSTRING_STR
     }
 
-    fn handle_request(&self, request: &EFQuery) -> EFResponse {
+    fn handle_request(&self, request: &EFRequest) -> EFResponse {
         EFResponse
     }
 }
 
 impl EFByteRepCompatible for EFString {
-    fn to_byte_rep(&self) -> Result<EFOk<EFByteRep>, EFError> {
+    fn to_byte_rep(&self) -> EFResult<EFByteRep> {
         // Create vectors from metadata
         let version_vector: Vec<u8> = vec![self.1.0, self.1.1, self.1.2];
         let type_vector: Vec<u8> = self.get_component_type().as_bytes().to_vec();
@@ -51,7 +51,7 @@ impl EFByteRepCompatible for EFString {
         builder.create_byte_rep()
     }
 
-    fn from_byte_rep(byte_rep: &EFByteRep) -> Result<EFOk<Self>, EFError> {
+    fn from_byte_rep(byte_rep: &EFByteRep) -> EFResult<Self> {
         // Get the version and vectors for attributes
         let (version, byte_vectors): (EFVersion, Vec<Vec<u8>>) = match 
         EFByteRepBuilder::validate_br_for_ver_and_attrs(byte_rep, EFSTRING_STR) {

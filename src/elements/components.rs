@@ -1,9 +1,9 @@
 use crate::elements::{EFVersion, EFComponent, EFComponentTuple};
 use crate::elements::timestamp::EFUTCTimestamp;
 use crate::elements::byte_rep::*;
-use crate::elements::uri::{EFURIString, EFQuery, EFResponse};
+use crate::elements::uri::{EFURIString, EFRequest, EFResponse};
 use crate::elements::common::string::EFString;
-use crate::utils::result::{EFOk, EFError};
+use crate::utils::result::*;
 use crate::utils::component_versions::*;
 use crate::utils::component_types::*;
 use crate::utils::vector::{get_index_from_generic_vector, get_string_from_byte_vector};
@@ -29,6 +29,19 @@ use connection::EFConnection;
 use dataflow::EFDataflow;
 use system_rule::EFSystemRule;
 use tag::EFTag;
+
+#[derive(Debug)]
+pub enum EFSystemPrivilege {
+    SeeSystem,
+    SeeSystemMetadata,
+    SeeSystemEntities,
+    SeeSubsystems,
+    SeeParentSystem,
+    ModifySystem,
+    CreateEntities,
+    DeleteEntities,
+    DeleteSystem
+}
 
 pub struct EFSystem {
     id_salt: EFUSize,
