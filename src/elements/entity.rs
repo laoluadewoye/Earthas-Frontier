@@ -26,7 +26,7 @@ pub enum EFEntityPrivilege {
 }
 
 impl EFPrivilege for EFEntityPrivilege {
-    fn to_string(&self) -> &str {
+    fn as_str(&self) -> &str {
         match self {
             EFEntityPrivilege::Owner => "Owner",
             EFEntityPrivilege::CloneEntity => "Clone Entity",

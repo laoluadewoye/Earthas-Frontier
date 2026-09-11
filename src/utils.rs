@@ -72,9 +72,12 @@ pub mod component_versions {
 
 pub mod constants {
     pub const EMPTY_STR_SLICE: &'static str = "";
+    pub const DEFAULT_MSG_DELIMITER: &'static str = "##";
 }
 
 pub mod result {
+    use super::constants::DEFAULT_MSG_DELIMITER;
+
     #[derive(Debug)]
     pub struct EFSuccess; //Means the function successfully ran without glaring issues
 
@@ -95,6 +98,12 @@ pub mod result {
         pub fn to_string(&self) -> String {
             format!("{:?}", self)
         }
+        
+        // For if I decide to use monad style later
+        pub fn with_added_msg(&mut self, new_msg: &str) {
+            self.msg.push_str(DEFAULT_MSG_DELIMITER);
+            self.msg.push_str(new_msg);
+        }
     }
 
     pub type EFResult<T> = Result<EFOk<T>, EFError>;
@@ -104,8 +113,8 @@ pub mod general {
     use super::result::{EFOk, EFError, EFResult};
     use sha2::{Digest, Sha256, Sha512};
 
-    pub fn get_hash(string_vec: Vec<&String>, entity_hash: &String) -> EFResult<String> {
-        let hash_bytes: Vec<u8> = match entity_hash.to_lowercase().as_str() {
+    pub fn get_hash(string_vec: Vec<&String>, hash: &String) -> EFResult<String> {
+        let hash_bytes: Vec<u8> = match hash.to_lowercase().as_str() {
             "sha256" | "" => {
                 let mut hasher: Sha256 = Sha256::new();
                 for s in string_vec {
@@ -123,8 +132,8 @@ pub mod general {
             _ => {
                 return Err(EFError{
                     function: String::from("get_hash"), 
-                    line: String::from("entity_hash.to_lowercase().as_str()"), 
-                    msg: format!("An incorrect value was used for entity_hash key.")
+                    line: String::from("hash.to_lowercase().as_str()"), 
+                    msg: format!("An incorrect value was used for hash key.")
                 });
             }
         };
@@ -327,6 +336,26 @@ pub mod vector {
                 function: String::from("get_string_from_byte_vector"), 
                 line: String::from("str::from_utf8(v.as_slice())"), 
                 msg: String::from("Passed in byte vector is not compatible with UTF-8.")
+            })
+        }
+    }
+}
+
+pub mod hashmap {
+    use super::result::{EFOk, EFError, EFResult};
+    use std::hash::Hash;
+    use std::collections::HashMap;
+
+    pub fn get_value_from_generic_hashmap<K: Eq + Hash + Clone, V: Clone>(hm: &HashMap<K, V>, k: &K) -> EFResult<V> {
+        match hm.get(k) {
+            Some(hm_v) => Ok(EFOk{
+                value: hm_v.clone(), 
+                msg: String::from("Cloned value from passed in key.")
+            }),
+            None => Err(EFError {
+                function: String::from("get_value_from_generic_hashmap"),
+                line: String::from("hm.get(k)"), 
+                msg: format!("Could not get value from passed in key.")
             })
         }
     }

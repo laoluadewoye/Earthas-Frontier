@@ -2,6 +2,7 @@ use crate::elements::byte_rep::EFByteVecCompatible;
 use crate::utils::result::{EFOk, EFError, EFResult};
 use crate::utils::vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
 use crate::elements::byte_rep::enum_helper::*;
+use std::hash::Hash;
 
 #[derive(Debug)]
 pub enum EFURIAuthority {
@@ -175,7 +176,7 @@ pub struct EFURI {
     entity_target: EFURITarget
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EFURIString(pub String);
 
 impl EFURI {

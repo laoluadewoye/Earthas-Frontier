@@ -15,5 +15,5 @@ pub struct EFStaticEntity<T: EFComponent> {
 }
 
 impl<T: EFComponent> EFEntity for EFStaticEntity<T> {
-
+    
 }

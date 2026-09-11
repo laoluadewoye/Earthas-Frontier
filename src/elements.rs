@@ -7,6 +7,7 @@ pub mod timestamp;
 pub mod byte_rep;
 pub mod rule;
 pub mod file;
+pub mod tracker;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EFVersion(pub u8, pub u8, pub u8);
