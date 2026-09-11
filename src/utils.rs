@@ -198,6 +198,14 @@ pub mod json {
     }
 }
 
+pub mod membership {
+    pub fn union_of<T>(first_vector: Vec<T>, second_vector: Vec<T>);
+    pub fn intersection_of<T>(first_vector: Vec<T>, second_vector: Vec<T>);
+    pub fn not_intersection_of<T>(first_vector: Vec<T>, second_vector: Vec<T>);
+    pub fn only_in_first<T>(first_vector: Vec<T>, second_vector: Vec<T>);
+    pub fn is_subset_of_first<T>(first_vector: Vec<T>, second_vector: Vec<T>);
+}
+
 pub mod os {
     use super::result::{EFSuccess, EFOk, EFError, EFResult};
     use std::env::consts::OS;
@@ -342,21 +350,11 @@ pub mod vector {
 }
 
 pub mod hashmap {
-    use super::result::{EFOk, EFError, EFResult};
-    use std::hash::Hash;
+    use super::result::{EFOk, EFResult};
     use std::collections::HashMap;
 
-    pub fn get_value_from_generic_hashmap<K: Eq + Hash + Clone, V: Clone>(hm: &HashMap<K, V>, k: &K) -> EFResult<V> {
-        match hm.get(k) {
-            Some(hm_v) => Ok(EFOk{
-                value: hm_v.clone(), 
-                msg: String::from("Cloned value from passed in key.")
-            }),
-            None => Err(EFError {
-                function: String::from("get_value_from_generic_hashmap"),
-                line: String::from("hm.get(k)"), 
-                msg: format!("Could not get value from passed in key.")
-            })
-        }
+    pub fn get_vector_of_keys_from_generic_hashmap<K: Clone, V>(hm: &HashMap<K, V>) -> EFResult<Vec<K>> {
+        let key_list: Vec<K> = hm.keys().map(|k| k.clone()).collect();
+        Ok(EFOk{ value: key_list, msg: String::from("Got vector of keys.") })
     }
 }

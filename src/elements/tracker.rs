@@ -1,21 +1,25 @@
 use std::collections::{HashSet, HashMap};
 
 #[derive(Debug, Clone)]
-pub struct EFTrackerVector<T: Clone> {
+pub struct EFItemTracker<T: Clone> {
     items: Vec<T>,
     tombstones: HashSet<usize>
 }
 
-impl<T: Clone> EFTrackerVector<T> {
+impl<T: Clone> EFItemTracker<T> {
     pub fn new() -> Self {
-        EFTrackerVector { items: Vec::new(), tombstones: HashSet::new() }
+        EFItemTracker { items: Vec::new(), tombstones: HashSet::new() }
     }
 
     pub fn build(items: Vec<T>, tombstones: HashSet<usize>) -> Self {
-        EFTrackerVector { items, tombstones }
+        EFItemTracker { items, tombstones }
     }
 
-    pub fn get_item(&self, item_index: usize) -> Option<T> {
+    pub fn get_length(&self) -> usize {
+        self.items.len() - self.tombstones.len()
+    }
+
+    pub fn get_item(&self, item_index: usize) -> Option<&T> {
         // Check if there's an out of bounds possibility
         if item_index >= self.items.len() {
             return None;
@@ -27,14 +31,26 @@ impl<T: Clone> EFTrackerVector<T> {
         }
 
         // Retrieve item
-        Some(self.items[item_index].clone())
+        Some(&self.items[item_index])
     }
 
-    pub fn get_multiple_items(&self, item_indexes: &Vec<usize>) -> Vec<Option<T>> {
-        let mut gotten_items: Vec<Option<T>> = Vec::new();
+    pub fn get_multiple_items(&self, item_indexes: &Vec<usize>) -> Vec<Option<&T>> {
+        let mut gotten_items: Vec<Option<&T>> = Vec::new();
 
         for item_index in item_indexes {
             gotten_items.push(self.get_item(item_index.clone()))
+        }
+
+        gotten_items
+    }
+
+    pub fn get_all_items(&self) -> Vec<&T> {
+        let mut gotten_items: Vec<&T> = Vec::new();
+
+        for (item_index, item) in self.items.iter().enumerate() {
+            if !self.tombstones.contains(&item_index) {
+                gotten_items.push(item);
+            }
         }
 
         gotten_items
@@ -90,6 +106,23 @@ impl<T: Clone> EFTrackerVector<T> {
             popped_items.push(self.pop_item(item_index.clone()));
         }
 
+        popped_items
+    }
+
+    pub fn pop_all_items(&mut self) -> Vec<T> {
+        // Pop items into new vector
+        let mut popped_items: Vec<T> = Vec::new();
+
+        for (item_index, item) in self.items.iter().enumerate() {
+            if !self.tombstones.contains(&item_index) {
+                popped_items.push(item.clone());
+            }
+        }
+
+        // Reset attributes
+        self.reset_items();
+
+        // Return vector
         popped_items
     }
 
