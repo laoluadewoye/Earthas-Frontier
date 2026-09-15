@@ -75,6 +75,55 @@ pub mod constants {
     pub const DEFAULT_MSG_DELIMITER: &'static str = "##";
 }
 
+pub mod result_two {
+    pub struct EFResult<T> {
+        pub value: Option<T>,
+        pub is_ok: bool,
+        logs: Vec<String>
+    }
+
+    pub enum EFResultOption<T> {
+        Wrapped(EFResult<T>),
+        Naked(T)
+    }
+
+    impl<T> EFResult<T> {
+        pub fn new(res_new: T) -> EFResult<T> {
+
+        }
+
+        pub fn new_if_naked(res_op: EFResultOption<T>) -> EFResult<T> {
+
+        }
+
+        pub fn run_function_on_new(
+            res_new: T, 
+            function: &dyn Fn(T) -> EFResult<T>
+        ) -> EFResult<T> {
+
+        }
+
+        pub fn run_function_on_option(
+            res_op: EFResultOption<T>, 
+            function: &dyn Fn(EFResultOption<T>) -> EFResult<T>
+        ) -> EFResult<T> {
+
+        }
+
+        pub fn add_to_logs(&mut self, function_name: &str, function_line: &str, info: &str) {
+
+        }
+
+        pub fn get_logs_as_string(&self, delimiter: char) -> String {
+
+        }
+
+        pub fn run_function_on_self(&mut self, function: &dyn FnMut(&mut EFResult<T>)) {
+
+        }
+    }
+}
+
 pub mod result {
     use super::constants::DEFAULT_MSG_DELIMITER;
 

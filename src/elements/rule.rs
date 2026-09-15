@@ -28,29 +28,29 @@ impl EFRuleEffect {
 
 #[derive(Debug)]
 pub enum EFRuleHashTarget {
-    SingleHash(String),
-    MultipleHash(Vec<String>)
+    Single(String),
+    Multiple(Vec<String>)
 }
 
 #[derive(Debug)]
-pub enum EFRuleIdTarget {
-    SingleId(EFURIString),
-    MultipleId(Vec<EFURIString>),
+pub enum EFRuleIdentityTarget {
+    Single(EFURIString),
+    Multiple(Vec<EFURIString>),
 }
 
 #[derive(Debug)]
 pub enum EFRulePropertyTarget<P: EFPrivilege> {
     All,
-    AllForEffect(EFRuleEffect),
-    AllForPrivilege(P),
-    AllForIdentity(EFURIString),
+    Effect(EFRuleEffect),
+    Privilege(P),
+    Identity(EFURIString),
 }
 
 #[derive(Debug)]
 pub enum EFRuleTarget<P: EFPrivilege> {
     Hash(EFRuleHashTarget),
-    Id(EFRuleIdTarget),
-    All(EFRulePropertyTarget<P>)
+    Identity(EFRuleIdentityTarget),
+    Property(EFRulePropertyTarget<P>)
 }
 
 #[derive(Debug, Clone)]
@@ -95,13 +95,13 @@ pub enum EFRuleTrackerRequest<P: EFPrivilege> {
     GetIdentities,
     GetPrivileges,
     GetRules(EFRuleTarget<P>),
-    AddRules(EFRuleIdTarget),
-    PopRules(EFRuleTarget<P>),
+    AddRules(EFRuleIdentityTarget, Vec<EFAnonRule<P>>, String),
+    PopRules(EFRuleTarget<P>)
 }
 
 #[derive(Debug)]
 pub enum EFRuleTrackerResponse<P: EFPrivilege> {
-    Count(usize),
+    RuleCount(usize),
     Hashes(EFRuleHashTarget),
     Identities(Vec<EFURIString>),
     Privileges(Vec<P>),
@@ -109,7 +109,7 @@ pub enum EFRuleTrackerResponse<P: EFPrivilege> {
     Error(EFError)
 }
 
-pub trait EFRuleTracker {
+pub trait EFRuleTracker { 
     type PrivilegeType: EFPrivilege;
 
     fn new() -> Self;
@@ -130,7 +130,7 @@ pub trait EFRuleTracker {
     // Adding rules
     fn add_rules(
         &mut self,
-        id_target: &EFRuleIdTarget,
+        id_target: &EFRuleIdentityTarget,
         anon_rules: &Vec<EFAnonRule<Self::PrivilegeType>>,
         rule_hash: &String
     ) -> EFResult<EFRuleHashTarget>;
@@ -145,18 +145,11 @@ pub trait EFRuleTracker {
         property_target: &EFRulePropertyTarget<Self::PrivilegeType>
     ) -> EFResult<Vec<EFRule<Self::PrivilegeType>>>;
 
-    // Request handler
-    fn handle_rule_tracker_request(
-        &self,
+    // Request handlers
+    fn handle_request(
+        &mut self,
         request: EFRuleTrackerRequest<Self::PrivilegeType>
-    ) -> EFResult<EFRuleTrackerResponse<Self::PrivilegeType>>;
-}
-
-#[derive(Debug)]
-pub enum EFBasicRuleTrackerTryPopResult {
-    OutOfBounds,
-    Removed,
-    RemovedAndEmpty
+    ) -> EFRuleTrackerResponse<Self::PrivilegeType>;
 }
 
 #[derive(Debug)]
@@ -434,7 +427,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
     fn get_hashes(&self) -> EFResult<EFRuleHashTarget> {
         match get_vector_of_keys_from_generic_hashmap(&self.rule_hashes) {
             Ok(hashes) => Ok(EFOk{
-                value: EFRuleHashTarget::MultipleHash(hashes.value),
+                value: EFRuleHashTarget::Multiple(hashes.value),
                 msg: String::from("Got vector of hashes.")
             }),
             Err(e) => Err(e)
@@ -463,7 +456,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
 
     fn get_rules_by_hashes(&self, hash_target: &EFRuleHashTarget) -> EFResult<Vec<&EFRule<Self::PrivilegeType>>> {
         match hash_target {
-            EFRuleHashTarget::SingleHash(hash) => match self.rule_hashes.get(hash) {
+            EFRuleHashTarget::Single(hash) => match self.rule_hashes.get(hash) {
                 Some(hash_entry) => match self.rules.get_item(hash_entry.rules_index) {
                     Some(rule) => Ok(EFOk{
                         value: vec![rule], 
@@ -481,7 +474,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                     msg: format!("Could not find hash {}.", hash.as_str())
                 })
             },
-            EFRuleHashTarget::MultipleHash(hashes) => {
+            EFRuleHashTarget::Multiple(hashes) => {
                 let mut found_rules: Vec<&EFRule<Self::PrivilegeType>> = Vec::new();
                 let mut unknown_hashes: Vec<&String> = Vec::new();
                 let mut missing_rules: Vec<&String> = Vec::new();
@@ -563,7 +556,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                 value: self.rules.get_all_items(),
                 msg: String::from("Got all rules.")
             }),
-            EFRulePropertyTarget::AllForEffect(effect) => match effect {
+            EFRulePropertyTarget::Effect(effect) => match effect {
                 EFRuleEffect::Allow => Ok(EFOk{
                     value: get_property_pipeline(self.allow_rules.get_all_items()), 
                     msg: String::from("Got all allow rules.")
@@ -573,7 +566,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                     msg: String::from("Got all deny rules.")
                 })
             },
-            EFRulePropertyTarget::AllForPrivilege(privilege) => match self.privilege_map.get(privilege) {
+            EFRulePropertyTarget::Privilege(privilege) => match self.privilege_map.get(privilege) {
                 Some(privilege_rules) => Ok(EFOk{
                     value: get_property_pipeline(privilege_rules.get_all_items()), 
                     msg: format!("Got rules for privilege {}.", privilege.as_str())
@@ -584,7 +577,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                     msg: format!("Could not get rules for privilege {}.", privilege.as_str())
                 })
             },
-            EFRulePropertyTarget::AllForIdentity(identity) => match self.identity_map.get(identity) {
+            EFRulePropertyTarget::Identity(identity) => match self.identity_map.get(identity) {
                 Some(identity_rules) => Ok(EFOk{
                     value: get_property_pipeline(identity_rules.get_all_items()), 
                     msg: format!("Got rules for identity {}.", identity.0.as_str())
@@ -600,30 +593,32 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
 
     fn add_rules(
         &mut self,
-        id_target: &EFRuleIdTarget,
+        id_target: &EFRuleIdentityTarget,
         anon_rules: &Vec<EFAnonRule<Self::PrivilegeType>>,
         rule_hash: &String
     ) -> EFResult<EFRuleHashTarget>
     {
         // Create rule combinations
         let mut rule_combos: Vec<EFRule<Self::PrivilegeType>> = Vec::new();
-        if let EFRuleIdTarget::SingleId(single_id) = id_target {
-            for anon_rule in anon_rules {
-                rule_combos.push(EFRule{
-                    identity: single_id.clone(),
-                    effect: anon_rule.effect.clone(),
-                    privilege: anon_rule.privilege.clone()
-                });
-            }
-        }
-        else if let EFRuleIdTarget::MultipleId(multiple_ids) = id_target {
-            for single_id in multiple_ids {
+        match id_target {
+            EFRuleIdentityTarget::Single(identity) => {
                 for anon_rule in anon_rules {
                     rule_combos.push(EFRule{
-                        identity: single_id.clone(),
+                        identity: identity.clone(),
                         effect: anon_rule.effect.clone(),
                         privilege: anon_rule.privilege.clone()
                     });
+                }
+            },
+            EFRuleIdentityTarget::Multiple(identities) => {
+                for identity in identities {
+                    for anon_rule in anon_rules {
+                        rule_combos.push(EFRule{
+                            identity: identity.clone(),
+                            effect: anon_rule.effect.clone(),
+                            privilege: anon_rule.privilege.clone()
+                        });
+                    }
                 }
             }
         }
@@ -651,7 +646,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
         // Return attempt information
         let output_target_len: usize = output_target.len();
         Ok(EFOk{
-            value: EFRuleHashTarget::MultipleHash(output_target),
+            value: EFRuleHashTarget::Multiple(output_target),
             msg: format!(
                 "Added {} rules. The following rules could not be added:\n{}",
                 output_target_len,
@@ -666,14 +661,14 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
     ) -> EFResult<Vec<EFRule<Self::PrivilegeType>>>
     {
         match hash_target {
-            EFRuleHashTarget::SingleHash(hash) => match self.pop_from_tracker(hash) {
+            EFRuleHashTarget::Single(hash) => match self.pop_from_tracker(hash) {
                 Ok(rule) => Ok(EFOk{
                     value: vec![rule.value], 
                     msg: format!("Popped rule for {}.", hash.as_str())
                 }),
                 Err(e) => Err(e)
             },
-            EFRuleHashTarget::MultipleHash(hashes) => {
+            EFRuleHashTarget::Multiple(hashes) => {
                 let mut popped_rules: Vec<EFRule<Self::PrivilegeType>> = Vec::new();
                 let mut missed_hashes: Vec<&String> = Vec::new();
 
@@ -737,7 +732,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                 value: self.rules.pop_all_items(), 
                 msg: String::from("Popped all rules.")
             }),
-            EFRulePropertyTarget::AllForEffect(effect) => match effect {
+            EFRulePropertyTarget::Effect(effect) => match effect {
                 EFRuleEffect::Allow => Ok(EFOk{
                     value: pop_property_pipeline(self.allow_rules.pop_all_items()), 
                     msg: String::from("Popped all allow rules.")
@@ -747,7 +742,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                     msg: String::from("Popped all deny rules.")
                 })
             },
-            EFRulePropertyTarget::AllForPrivilege(privilege) => match self.privilege_map.get_mut(privilege) {
+            EFRulePropertyTarget::Privilege(privilege) => match self.privilege_map.get_mut(privilege) {
                 Some(privilege_rules) => Ok(EFOk{
                     value: pop_property_pipeline(privilege_rules.pop_all_items()), 
                     msg: format!("Popped rules for privilege {}.", privilege.as_str())
@@ -758,7 +753,7 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                     msg: format!("Could not get rules for privilege {}.", privilege.as_str())
                 })
             },
-            EFRulePropertyTarget::AllForIdentity(identity) => match self.identity_map.get_mut(identity) {
+            EFRulePropertyTarget::Identity(identity) => match self.identity_map.get_mut(identity) {
                 Some(identity_rules) => Ok(EFOk{
                     value: pop_property_pipeline(identity_rules.pop_all_items()), 
                     msg: format!("Popped rules for identity {}.", identity.0.as_str())
@@ -772,14 +767,14 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
         }
     }
 
-    fn handle_rule_tracker_request(
-        &self,
+    fn handle_request(
+        &mut self,
         request: EFRuleTrackerRequest<Self::PrivilegeType>
     ) -> EFRuleTrackerResponse<Self::PrivilegeType>
     {
         match request {
             EFRuleTrackerRequest::GetRuleCount => match self.get_rule_count() {
-                Ok(rule_count) => EFRuleTrackerResponse::Count(rule_count.value),
+                Ok(rule_count) => EFRuleTrackerResponse::RuleCount(rule_count.value),
                 Err(e) => EFRuleTrackerResponse::Error(e)
             },
             EFRuleTrackerRequest::GetHashes => match self.get_hashes() {
@@ -794,9 +789,50 @@ impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                 Ok(privileges) => EFRuleTrackerResponse::Privileges(privileges.value),
                 Err(e) => EFRuleTrackerResponse::Error(e)
             },
-            EFRuleTrackerRequest::GetRules(target) =>,
-            EFRuleTrackerRequest::AddRules(id_target) =>,
-            EFRuleTrackerRequest::PopRules(target) =>,
+            EFRuleTrackerRequest::GetRules(target) => {
+                match target {
+                    EFRuleTarget::Hash(hash_target) => match self.get_rules_by_hashes(&hash_target) {
+                        Ok(gotten_rules) => {
+                            let g_r: Vec<EFRule<Self::PrivilegeType>> = gotten_rules.value.into_iter().map(|r| r.clone()).collect();
+                            EFRuleTrackerResponse::Rules(g_r)
+                        },
+                        Err(e) => EFRuleTrackerResponse::Error(e)
+                    },
+                    EFRuleTarget::Property(property_target) => match self.get_rules_by_property(&property_target) {
+                        Ok(gotten_rules) => {
+                            let g_r: Vec<EFRule<Self::PrivilegeType>> = gotten_rules.value.into_iter().map(|r| r.clone()).collect();
+                            EFRuleTrackerResponse::Rules(g_r)
+                        },
+                        Err(e) => EFRuleTrackerResponse::Error(e)
+                    },
+                    _ => EFRuleTrackerResponse::Error(EFError{
+                        function: String::from("handle_request"), 
+                        line: String::from("GetRules(target)"), 
+                        msg: String::from("Input target was not a hash target or property target.")
+                    })
+                }
+            },
+            EFRuleTrackerRequest::AddRules(id_target, anon_rules, rule_hash) => match self.add_rules(&id_target, &anon_rules, &rule_hash) {
+                Ok(new_hashes) => EFRuleTrackerResponse::Hashes(new_hashes.value),
+                Err(e) => EFRuleTrackerResponse::Error(e)
+            },
+            EFRuleTrackerRequest::PopRules(target) => {
+                match target {
+                    EFRuleTarget::Hash(hash_target) => match self.pop_rules_by_hashes(&hash_target) {
+                        Ok(popped_rules) => EFRuleTrackerResponse::Rules(popped_rules.value),
+                        Err(e) => EFRuleTrackerResponse::Error(e)
+                    },
+                    EFRuleTarget::Property(property_target) => match self.pop_rules_by_property(&property_target) {
+                        Ok(popped_rules) => EFRuleTrackerResponse::Rules(popped_rules.value),
+                        Err(e) => EFRuleTrackerResponse::Error(e)
+                    },
+                    _ => EFRuleTrackerResponse::Error(EFError{
+                        function: String::from("handle_request"), 
+                        line: String::from("PopRules(target)"), 
+                        msg: String::from("Input target was not a hash target or property target.")
+                    })
+                }
+            }
         }
     }
 }

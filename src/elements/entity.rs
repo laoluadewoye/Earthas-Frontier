@@ -1,6 +1,7 @@
 pub mod static_entity;
 pub mod dynamic_entity;
 
+use std::hash::Hash;
 use crate::elements::*;
 use crate::elements::file::*;
 use crate::elements::timestamp::EFUTCTimestamp;
@@ -8,7 +9,7 @@ use crate::elements::uri::{EFURIString};
 use crate::utils::result::*;
 use crate::elements::rule::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum EFEntityPrivilege {
     Owner, // Supercedes all other privileges
     CloneEntity,
