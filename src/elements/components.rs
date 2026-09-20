@@ -16,18 +16,20 @@ pub mod connection;
 pub mod dataflow;
 pub mod system_rule;
 pub mod tag;
+pub mod file;
 
-use super::primitives::unsigned_int::EFUSize;
+// use super::primitives::unsigned_int::EFUSize;
 // use super::entity::{EFStaticEntityTracker, EFByteEntityTracker};
-use identity::EFIdentity;
-use role::{EFRole};
-use secret::EFSecret;
-use hook::EFHook;
-use reference::EFReference;
-use connection::EFConnection;
-use dataflow::EFDataflow;
-use system_rule::EFSystemRule;
-use tag::EFTag;
+// use identity::EFIdentity;
+// use role::{EFRole};
+// use secret::EFSecret;
+// use hook::EFHook;
+// use reference::EFReference;
+// use connection::EFConnection;
+// use dataflow::EFDataflow;
+// use system_rule::EFSystemRule;
+// use tag::EFTag;
+// use file::EFFile;
 
 #[derive(Debug)]
 pub enum EFSystemPrivilege {
@@ -55,6 +57,7 @@ pub enum EFSystemPrivilege {
 //     byte_entities: EFByteEntityTracker,
 //     system_rules: EFStaticEntityTracker<EFSystemRule>,
 //     tags: EFStaticEntityTracker<EFTag>,
+//     files: EFStaticEntityTracker<EFFile>,
 // }
 
 pub struct EFGlobalState;

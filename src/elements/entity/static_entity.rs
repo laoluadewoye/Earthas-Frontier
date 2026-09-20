@@ -2,15 +2,14 @@ use super::*;
 
 #[derive(Debug)]
 pub struct EFStaticEntity<T: EFComponent> {
-    id: EFEntityId,
-    name: EFEntityName,
+    id: EFId,
+    name: EFName,
     owner: EFURIString,
     system: EFURIString,
-    date_created: EFUTCTimestamp,
-    date_accessed: EFUTCTimestamp,
-    date_modified: EFUTCTimestamp,
+    time_metadata: EFTimeMetadata,
     rules: EFBasicRuleTracker<EFEntityPrivilege>,
     files: EFBasicFileTracker,
+    tags: EFBasicTagTracker,
     component: T,
 }
 

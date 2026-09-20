@@ -1,13 +1,22 @@
-pub mod static_entity;
-pub mod dynamic_entity;
-
 use std::hash::Hash;
-use crate::elements::*;
-use crate::elements::file::*;
-use crate::elements::timestamp::EFUTCTimestamp;
+use crate::elements::{
+    EFVersion, 
+    EFComponent, 
+    EFComponentRequest, 
+    EFComponentResponse, 
+    EFName, 
+    EFId
+};
+use crate::elements::timestamp::{EFUTCTimestamp, EFTimeMetadata};
 use crate::elements::uri::{EFURIString};
-use crate::utils::result::{EFResult, EFReturnEvent, EFValueResult};
-use crate::elements::rule::{EFPrivilege, EFRuleEffect, EFRuleTrackerRequest, EFRuleTrackerResponse};
+use crate::utils::result::{EFResult, EFValueResult};
+use crate::elements::rule::{
+    EFRulePrivilege, 
+    EFRuleEffect, 
+    EFRuleTrackerRequest, 
+    EFRuleTrackerResponse,
+    EFBasicRuleTracker
+};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum EFEntityPrivilege {
@@ -29,7 +38,7 @@ pub enum EFEntityPrivilege {
     UseComponentHandler
 }
 
-impl EFPrivilege for EFEntityPrivilege {
+impl EFRulePrivilege for EFEntityPrivilege {
     fn as_str(&self) -> &str {
         match self {
             EFEntityPrivilege::Owner => "Owner",
@@ -73,48 +82,6 @@ impl EFPrivilege for EFEntityPrivilege {
     }
 }
 
-#[derive(Debug)]
-pub struct EFEntityName(String);
-
-impl EFEntityName {
-    pub fn new_if_valid(new_name: &String) -> EFValueResult<EFEntityName> {
-        let is_valid: bool = new_name.chars().all(|c: char| {
-            c.is_alphanumeric() || c == '_' || c == '-' || c == ' '
-        });
-
-        if is_valid {
-            Ok(EFEntityName(new_name.clone()))
-        }
-        else {
-            Err(EFReturnEvent::new_with_func_info_log(
-                "new_if_valid", 
-                "New name is not valid."
-            ))
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct EFEntityId(String);
-
-impl EFEntityId {
-    pub fn new_if_valid(new_id: &String) -> EFValueResult<EFEntityId> {
-        let is_valid: bool = new_id.chars().all(|c: char| {
-            c.is_ascii_hexdigit()
-        });
-
-        if is_valid {
-            Ok(EFEntityId(new_id.clone()))
-        }
-        else {
-            Err(EFReturnEvent::new_with_func_info_log(
-                "new_if_valid", 
-                "New id is not valid."
-            ))
-        }
-    }
-}
-
 pub trait EFEntity {
     type EntityType: EFEntity;
     type ComponentType: EFComponent;
@@ -123,7 +90,7 @@ pub trait EFEntity {
 
     // Create new entity
     fn new(
-        name: EFEntityName, 
+        name: EFName, 
         owner: EFURIString,
         system: EFURIString,
         component: Self::ComponentType
@@ -140,15 +107,15 @@ pub trait EFEntity {
     ) -> EFValueResult<EFRuleEffect>;
 
     // Work with entity's ID
-    fn get_id(&self, current_id: &EFURIString) -> EFValueResult<&EFEntityId>;
+    fn get_id(&self, current_id: &EFURIString) -> EFValueResult<&EFId>;
 
     // Work with entity's name
-    fn get_name(&self, current_id: &EFURIString) -> EFValueResult<&EFEntityName>;
+    fn get_name(&self, current_id: &EFURIString) -> EFValueResult<&EFName>;
     fn set_name(
         &mut self, 
         current_id: &EFURIString,
         new_name: &String
-    ) -> EFResult<&EFEntityName>;
+    ) -> EFResult<&EFName>;
 
     // Work with owner of entity
     fn get_owner(&self, current_id: &EFURIString) -> EFValueResult<&EFURIString>;
@@ -162,21 +129,21 @@ pub trait EFEntity {
     fn get_system(&self, current_id: &EFURIString) -> EFValueResult<&EFURIString>;
 
     // Work with creation date, last accessed date, and last modified date
-    fn get_last_created(&self, current_id: &EFURIString) -> EFValueResult<&EFUTCTimestamp>;
+    fn get_created(&self, current_id: &EFURIString) -> EFValueResult<&EFUTCTimestamp>;
 
     fn get_last_accessed(&self, current_id: &EFURIString) -> EFValueResult<&EFUTCTimestamp>;
     fn set_last_accessed(
         &mut self, 
         current_id: &EFURIString, 
         new_timestamp: &EFUTCTimestamp
-    ) -> EFResult<&EFUTCTimestamp>;
+    ) -> EFResult<()>;
 
     fn get_last_modified(&self, current_id: &EFURIString) -> EFValueResult<&EFUTCTimestamp>;
     fn set_last_modified(
         &mut self, 
         current_id: &EFURIString,
         new_timestamp: &EFUTCTimestamp
-    ) -> EFResult<&EFUTCTimestamp>;
+    ) -> EFResult<()>;
 
     // Work with entity's rules
     fn rule_tracker_action(
@@ -227,14 +194,19 @@ pub trait EFEntityTracker {
 
     fn new() -> Self;
     fn get_entity_count(&self) -> usize;
-    fn get_entity_names(&self) -> Vec<EFEntityName>;
-    fn get_entity_ids(&self) -> Vec<EFEntityId>;
+    fn get_entity_names(&self) -> Vec<EFName>;
+    fn get_entity_ids(&self) -> Vec<EFId>;
+    fn get_entity_tags(&self) -> Vec<EFURIString>;
 
-    fn add_entity(&self, new_entity: Self::EntityType) -> EFResult<&EFEntityId>;
+    fn add_entity(&self, new_entity: Self::EntityType) -> EFResult<&EFId>;
     fn get_entity_by_name(&self, entity_name: &String) -> EFResult<&Self::EntityType>;
     fn get_entity_by_id(&self, entity_id: &String) -> EFResult<&Self::EntityType>;
+    fn get_entity_ids_by_tags(&self, entity_tags: &Vec<EFURIString>) -> EFResult<Vec<&EFId>>;
     fn get_mutable_entity_by_name(&mut self, entity_name: &String) -> EFResult<&mut Self::EntityType>;
     fn get_mutable_entity_by_id(&mut self, entity_id: &String) -> EFResult<&mut Self::EntityType>;
     fn pop_entity_by_name(&self, entity_name: &String) -> EFResult<Self::EntityType>;
     fn pop_entity_by_id(&self, entity_id: &String) -> EFResult<Self::EntityType>;
 }
+
+pub mod static_entity;
+pub mod dynamic_entity;

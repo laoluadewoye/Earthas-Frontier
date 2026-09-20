@@ -140,6 +140,18 @@ pub mod result {
             new_event
         }
 
+        pub fn with_added_log(event: EFReturnEvent, new_log: String) -> EFReturnEvent {
+            let mut new_event: EFReturnEvent = event;
+            new_event.add_log(new_log);
+            new_event
+        }
+
+        pub fn with_added_func_info_log(event: EFReturnEvent, func_name: &str, info: &str) -> EFReturnEvent {
+            let mut new_event: EFReturnEvent = event;
+            new_event.add_func_info_log(func_name, info);
+            new_event
+        }
+
         pub fn transfer_event(&mut self, event: EFReturnEvent) {
             for log in event.logs.into_iter() {
                 self.logs.push(log);

@@ -63,3 +63,56 @@ impl EFUTCTimestamp {
         }
     }
 }
+
+pub struct EFTimeMetadata {
+    created: EFUTCTimestamp,
+    last_accessed: EFUTCTimestamp,
+    last_modified: EFUTCTimestamp
+}
+
+impl EFTimeMetadata {
+    pub fn new() -> EFTimeMetadata {
+        let new_timestamp: EFUTCTimestamp = EFUTCTimestamp::new_for_now();
+
+        EFTimeMetadata {
+            created: new_timestamp.clone(),
+            last_accessed: new_timestamp.clone(),
+            last_modified: new_timestamp
+        }
+    }
+
+    pub fn new_from_str(s: &str) -> EFValueResult<EFTimeMetadata> {
+        let new_timestamp: EFUTCTimestamp = match EFUTCTimestamp::from_str(s) {
+            Ok(t) => t,
+            Err(e) => {
+                return Err(EFReturnEvent::with_added_func_info_log(
+                    e, 
+                    "new_from_str", 
+                    "Could not make new time metadata object."
+                ));
+            }
+        };
+
+        Ok(EFTimeMetadata {
+            created: new_timestamp.clone(),
+            last_accessed: new_timestamp.clone(),
+            last_modified: new_timestamp
+        })
+    }
+
+    pub fn get_created(&self) -> &EFUTCTimestamp {
+        &self.created
+    }
+    pub fn get_last_accessed(&self) -> &EFUTCTimestamp {
+        &self.last_accessed 
+    }
+    pub fn update_last_accessed(&mut self, new_timestamp: &EFUTCTimestamp) {
+        self.last_accessed = new_timestamp.clone();
+    }
+    pub fn get_last_modified(&self) -> &EFUTCTimestamp {
+        &self.last_modified
+    }
+    pub fn update_last_modified(&mut self, new_timestamp: &EFUTCTimestamp) {
+        self.last_modified = new_timestamp.clone();
+    }
+}

@@ -6,7 +6,7 @@ use crate::utils::hashmap::get_keys_vec;
 use crate::elements::uri::EFURIString;
 use crate::elements::tracker::EFItemTracker;
 
-pub trait EFPrivilege: Clone + Eq + Hash {
+pub trait EFRulePrivilege: Clone + Eq + Hash {
     fn as_str(&self) -> &str;
     fn get_all_as_strings() -> Vec<String>;
 }
@@ -39,7 +39,7 @@ pub enum EFRuleIdentityTarget {
 }
 
 #[derive(Debug)]
-pub enum EFRulePropertyTarget<P: EFPrivilege> {
+pub enum EFRulePropertyTarget<P: EFRulePrivilege> {
     All,
     Effect(EFRuleEffect),
     Privilege(P),
@@ -47,20 +47,20 @@ pub enum EFRulePropertyTarget<P: EFPrivilege> {
 }
 
 #[derive(Debug)]
-pub enum EFRuleTarget<P: EFPrivilege> {
+pub enum EFRuleTarget<P: EFRulePrivilege> {
     Hash(EFRuleHashTarget),
     Identity(EFRuleIdentityTarget),
     Property(EFRulePropertyTarget<P>)
 }
 
 #[derive(Debug, Clone)]
-pub struct EFRule<P: EFPrivilege> {
+pub struct EFRule<P: EFRulePrivilege> {
     identity: EFURIString,
     effect: EFRuleEffect,
     privilege: P
 }
 
-impl<P: EFPrivilege> EFRule<P> {
+impl<P: EFRulePrivilege> EFRule<P> {
     pub fn to_hash(&self, rule_hash: &String) -> EFValueResult<String> {
         get_hash(
             vec![
@@ -83,13 +83,13 @@ impl<P: EFPrivilege> EFRule<P> {
 }
 
 #[derive(Debug)]
-pub struct EFAnonRule<P: EFPrivilege> {
+pub struct EFAnonRule<P: EFRulePrivilege> {
     effect: EFRuleEffect,
     privilege: P
 }
 
 #[derive(Debug)]
-pub enum EFRuleTrackerRequest<P: EFPrivilege> {
+pub enum EFRuleTrackerRequest<P: EFRulePrivilege> {
     GetRuleCount,
     GetHashes,
     GetIdentities,
@@ -100,7 +100,7 @@ pub enum EFRuleTrackerRequest<P: EFPrivilege> {
 }
 
 #[derive(Debug)]
-pub enum EFRuleTrackerResponse<P: EFPrivilege> {
+pub enum EFRuleTrackerResponse<P: EFRulePrivilege> {
     RuleCount(usize),
     Hashes(EFRuleHashTarget),
     Identities(Vec<EFURIString>),
@@ -111,7 +111,7 @@ pub enum EFRuleTrackerResponse<P: EFPrivilege> {
 }
 
 pub trait EFRuleTracker { 
-    type PrivilegeType: EFPrivilege;
+    type PrivilegeType: EFRulePrivilege;
 
     fn new() -> Self;
 
@@ -163,7 +163,7 @@ pub struct EFBasicRuleHashEntry {
 }
 
 #[derive(Debug)]
-pub struct EFBasicRuleTracker<P: EFPrivilege> {
+pub struct EFBasicRuleTracker<P: EFRulePrivilege> {
     rules: EFItemTracker<EFRule<P>>,
     rule_hashes: HashMap<String, EFBasicRuleHashEntry>,
     allow_rules: EFItemTracker<usize>,
@@ -172,7 +172,7 @@ pub struct EFBasicRuleTracker<P: EFPrivilege> {
     privilege_map: HashMap<P, EFItemTracker<usize>>
 }
 
-impl<P: EFPrivilege> EFBasicRuleTracker<P> {
+impl<P: EFRulePrivilege> EFBasicRuleTracker<P> {
     fn add_to_tracker(&mut self, rule_hash: String, rule_combo: &EFRule<P>) {
         // Insert to rules
         let rules_index: usize = self.rules.push_item(rule_combo.clone());
@@ -400,7 +400,7 @@ impl<P: EFPrivilege> EFBasicRuleTracker<P> {
     }
 }
 
-impl<P: EFPrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
+impl<P: EFRulePrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
     type PrivilegeType = P;
 
     fn new() -> Self {
