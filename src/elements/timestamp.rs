@@ -1,5 +1,4 @@
-use crate::utils::result::{EFOk, EFError, EFResult};
-use crate::utils::vector::get_string_from_byte_vector;
+use crate::utils::result::{EFValueResult, EFReturnEvent};
 use chrono::{DateTime, Utc, FixedOffset};
 
 #[derive(Debug, Clone)]
@@ -12,7 +11,7 @@ pub enum EFUTCOffsetHemisphere {
 pub struct EFUTCTimestamp(pub DateTime<Utc>);
 
 impl EFUTCTimestamp {
-    pub fn get_timestamp_for_now() -> Self {
+    pub fn new_for_now() -> Self {
         EFUTCTimestamp(Utc::now())
     }
 
@@ -20,38 +19,30 @@ impl EFUTCTimestamp {
         &self, 
         hemisphere: EFUTCOffsetHemisphere, 
         offset_hours: i32, offset_minutes: i32
-    ) -> EFResult<DateTime<FixedOffset>> {
+    ) -> EFValueResult<DateTime<FixedOffset>> {
         let offset_seconds: i32 = offset_hours * 3600 + offset_minutes * 60;
         let (offset, hemisphere_str) = match hemisphere {
             EFUTCOffsetHemisphere::East => match FixedOffset::east_opt(offset_seconds) {
                 Some(fo) => (fo, "east"),
                 None => {
-                    return Err(EFError{
-                        function: String::from("to_utc_offset"),
-                        line: String::from("FixedOffset::east_opt(offset_seconds)"),
-                        msg: format!("Offset of {} seconds for eastern hemisphere not within range.", offset_seconds)
-                    });
+                    return Err(EFReturnEvent::new_with_func_info_log(
+                        "to_utc_offset", 
+                        format!("Offset of {} seconds for eastern hemisphere not within range.", offset_seconds).as_str()
+                    ));
                 }
             },
             EFUTCOffsetHemisphere::West => match FixedOffset::west_opt(offset_seconds) {
                 Some(fo) => (fo, "west"),
                 None => {
-                    return Err(EFError{
-                        function: String::from("to_utc_offset"),
-                        line: String::from("FixedOffset::west_opt(offset_seconds)"),
-                        msg: format!("Offset of {} seconds for wester hemisphere not within range.", offset_seconds)
-                    });
+                    return Err(EFReturnEvent::new_with_func_info_log(
+                        "to_utc_offset", 
+                        format!("Offset of {} seconds for western hemisphere not within range.", offset_seconds).as_str()
+                    ));
                 }
             }
         };
 
-        Ok(EFOk{
-            value: self.0.with_timezone(&offset), 
-            msg: format!(
-                "Created datetime with an offset of {} hours and {} minutes {}.", 
-                offset_hours, offset_minutes, hemisphere_str
-            )
-        })
+        Ok(self.0.with_timezone(&offset))
     }
 
     pub fn to_string(&self) -> String {
@@ -62,30 +53,13 @@ impl EFUTCTimestamp {
         self.to_string().into_bytes()
     }
 
-    pub fn from_string(s: &str) -> EFResult<Self> {
+    pub fn from_str(s: &str) -> EFValueResult<EFUTCTimestamp> {
         match DateTime::parse_from_rfc3339(s) {
-            Ok(d) => Ok(EFOk{
-                value: EFUTCTimestamp(d.to_utc()), 
-                msg: String::from("Parsed RFC 3339 string into UTC timestamp.")
-            }),
-            Err(_) => Err(EFError{
-                function: String::from("from_string"),
-                line: String::from("DateTime::parse_from_rfc3339(s)"),
-                msg: String::from("Could not parse RFC 3339 string into UTC timestamp.")
-            })
-        }
-    }
-
-    pub fn from_byte_vector(byte_vector: Vec<u8>) -> EFResult<Self> {
-        match get_string_from_byte_vector(&byte_vector) {
-            Ok(s) => match EFUTCTimestamp::from_string(s.value) {
-                Ok(ts) => Ok(EFOk{
-                    value: ts.value, 
-                    msg: String::from("Parsed byte vector into UTC timestamp.")
-                }),
-                Err(e) => Err(e)
-            },
-            Err(e) => Err(e)
+            Ok(d) => Ok(EFUTCTimestamp(d.to_utc())),
+            Err(_) => Err(EFReturnEvent::new_with_func_info_log(
+                "from_str", 
+                "Could not parse RFC 3339 string into UTC timestamp."
+            ))
         }
     }
 }

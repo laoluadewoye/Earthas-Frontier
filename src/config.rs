@@ -13,8 +13,8 @@ pub struct StartingConfig {
 fn check_arg_file(starting_config: &mut StartingConfig) {
     // Get JSON contents from arg file
     let arg_file_json: JSONValue = match load_json_from_file(&starting_config.arg_file) {
-        Ok(j) => j.value,
-        Err(e) => { panic!("{}", &e.to_string().as_str()); }
+        Ok(j) => j,
+        Err(e) => { panic!("{}", e.get_default_delimited_logs().as_str()); }
     };
     
     // Try to fill in any empty attributes

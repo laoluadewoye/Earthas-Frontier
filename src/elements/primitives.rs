@@ -1,11 +1,10 @@
 // Heavy use statements to bring functionality into scope
-use crate::elements::{EFComponent, EFVersion, EFComponentTuple};
+use crate::elements::{EFComponent, EFVersion};
 use crate::elements::uri::{EFRequest, EFResponse};
-use crate::elements::byte_rep::{EFByteRep, EFByteRepBuilder, EFByteRepCompatible};
 use crate::utils::result::*;
-use crate::utils::component_versions::*;
-use crate::utils::component_types::*;
-use crate::utils::vector::get_index_from_generic_vector;
+use crate::utils::element_versions::*;
+use crate::utils::element_types::*;
+use crate::utils::vector::get_generic_vec_obj;
 
 pub mod unsigned_int;
 pub mod signed_int;

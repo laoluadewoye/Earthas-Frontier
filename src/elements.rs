@@ -4,7 +4,6 @@ pub mod common;
 pub mod entity;
 pub mod components;
 pub mod timestamp;
-pub mod byte_rep;
 pub mod rule;
 pub mod file;
 pub mod tracker;
@@ -18,15 +17,6 @@ impl EFVersion {
     pub fn get_patch(&self) -> u8 { self.2 }
 }
 
-#[derive(Debug, Clone)]
-pub struct EFComponentTuple;
-// {
-//     version: EFVersion,
-//     attrs: Vec<String>,
-//     values: Vec<String>
-// }
-
-
 pub trait EFComponentRequest {}
 pub trait EFComponentResponse {}
 
@@ -38,10 +28,10 @@ pub trait EFComponent: Clone {
     // Create functions
     fn create_new(params: Self::ComponentParams) -> Self;
     fn create_from_compatible(params: Self::ComponentParams, version: EFVersion) -> Self;
-    fn create_from_older(older_component: &EFComponentTuple) -> Option<Self> where Self: Sized;
+    // fn create_from_older(older_component: &EFComponentTuple) -> Option<Self>;
 
     // Getter functions
-    fn get_component_as_older(&self, old_version: &EFVersion) -> EFComponentTuple;
+    // fn get_component_as_older(&self, old_version: &EFVersion) -> EFComponentTuple;
     fn get_component_version(&self) -> &EFVersion;
     fn get_component_type(&self) -> &str;
 

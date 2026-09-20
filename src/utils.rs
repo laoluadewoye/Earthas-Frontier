@@ -1,39 +1,39 @@
-pub mod component_types {
+pub mod element_types {
     // Unsigned integers
-    pub const EFUSIZE_STR: &'static str = "usize";
-    pub const EFU8_STR: &'static str = "u8";
-    pub const EFU16_STR: &'static str = "u16";
-    pub const EFU32_STR: &'static str = "u32";
-    pub const EFU64_STR: &'static str = "u64";
-    pub const EFU128_STR: &'static str = "u128";
+    pub const EFUSIZE_TYPE: &'static str = "usize";
+    pub const EFU8_TYPE: &'static str = "u8";
+    pub const EFU16_TYPE: &'static str = "u16";
+    pub const EFU32_TYPE: &'static str = "u32";
+    pub const EFU64_TYPE: &'static str = "u64";
+    pub const EFU128_TYPE: &'static str = "u128";
 
     // Signed integers
-    pub const EFISIZE_STR: &'static str = "isize";
-    pub const EFI8_STR: &'static str = "i8";
-    pub const EFI16_STR: &'static str = "i16";
-    pub const EFI32_STR: &'static str = "i32";
-    pub const EFI64_STR: &'static str = "i64";
-    pub const EFI128_STR: &'static str = "i128";
+    pub const EFISIZE_TYPE: &'static str = "isize";
+    pub const EFI8_TYPE: &'static str = "i8";
+    pub const EFI16_TYPE: &'static str = "i16";
+    pub const EFI32_TYPE: &'static str = "i32";
+    pub const EFI64_TYPE: &'static str = "i64";
+    pub const EFI128_TYPE: &'static str = "i128";
 
     // Signed floats
-    pub const EFF32_STR: &'static str = "f32";
-    pub const EFF64_STR: &'static str = "f64";
+    pub const EFF32_TYPE: &'static str = "f32";
+    pub const EFF64_TYPE: &'static str = "f64";
 
     // Other primitives
-    pub const EFBOOL_STR: &'static str = "bool";
-    pub const EFCHAR_STR: &'static str = "char";
+    pub const EFBOOL_TYPE: &'static str = "bool";
+    pub const EFCHAR_TYPE: &'static str = "char";
 
     // Common components
-    pub const EFSTRING_STR: &'static str = "string";
+    pub const EFSTRING_TYPE: &'static str = "string";
 
     // Core components
-    pub const EFIDENTITY_STR: &'static str = "identity";
-    pub const EFROLE_STR: &'static str = "role";
-    pub const EFROLEVECTOR_STR: &'static str = "role_vector";
-    pub const EFSECRET_STR: &'static str = "secret";
+    pub const EFIDENTITY_TYPE: &'static str = "identity";
+    pub const EFROLE_TYPE: &'static str = "role";
+    pub const EFROLEVECTOR_TYPE: &'static str = "role_vector";
+    pub const EFSECRET_TYPE: &'static str = "secret";
 }
 
-pub mod component_versions {
+pub mod element_versions {
     use crate::elements::EFVersion;
     
     // Unsigned integers
@@ -71,98 +71,178 @@ pub mod component_versions {
 }
 
 pub mod constants {
+    use crate::elements::EFVersion;
+
+    pub const EMPTY_VERSION: EFVersion = EFVersion(0, 0, 0);
     pub const EMPTY_STR_SLICE: &'static str = "";
-    pub const DEFAULT_MSG_DELIMITER: &'static str = "##";
-}
-
-pub mod result_two {
-    pub struct EFResult<T> {
-        pub value: Option<T>,
-        pub is_ok: bool,
-        logs: Vec<String>
-    }
-
-    pub enum EFResultOption<T> {
-        Wrapped(EFResult<T>),
-        Naked(T)
-    }
-
-    impl<T> EFResult<T> {
-        pub fn new(res_new: T) -> EFResult<T> {
-
-        }
-
-        pub fn new_if_naked(res_op: EFResultOption<T>) -> EFResult<T> {
-
-        }
-
-        pub fn run_function_on_new(
-            res_new: T, 
-            function: &dyn Fn(T) -> EFResult<T>
-        ) -> EFResult<T> {
-
-        }
-
-        pub fn run_function_on_option(
-            res_op: EFResultOption<T>, 
-            function: &dyn Fn(EFResultOption<T>) -> EFResult<T>
-        ) -> EFResult<T> {
-
-        }
-
-        pub fn add_to_logs(&mut self, function_name: &str, function_line: &str, info: &str) {
-
-        }
-
-        pub fn get_logs_as_string(&self, delimiter: char) -> String {
-
-        }
-
-        pub fn run_function_on_self(&mut self, function: &dyn FnMut(&mut EFResult<T>)) {
-
-        }
-    }
+    pub const DEFAULT_LOG_DELIMITER: char = '\n';
 }
 
 pub mod result {
-    use super::constants::DEFAULT_MSG_DELIMITER;
+    use super::constants::DEFAULT_LOG_DELIMITER;
 
-    #[derive(Debug)]
-    pub struct EFSuccess; //Means the function successfully ran without glaring issues
+    #[derive(Debug, Clone)]
+    pub struct EFReturnEvent {
+        logs: Vec<String>
+    }
 
-    #[derive(Debug)]
-    pub struct EFOk<T> {
+    impl EFReturnEvent {
+        pub fn new() -> EFReturnEvent {
+            EFReturnEvent { logs: Vec::new() }
+        }
+
+        pub fn add_log(&mut self, new_log: String) {
+            self.logs.push(new_log);
+        }
+
+        pub fn add_func_info_log(&mut self, func_name: &str, info: &str) {
+            self.logs.push(format!("{}: {}", func_name, info));
+        }
+
+        pub fn get_delimited_logs(&self, delimiter: char) -> String {
+            if self.logs.is_empty() {
+                String::new()
+            }
+            else {
+                let mut delimited_logs: String = String::new();
+
+                for log in self.logs.iter() {
+                    delimited_logs.push_str(log.as_str());
+                    delimited_logs.push(delimiter);
+                }
+
+                delimited_logs
+            }
+        }
+
+        pub fn get_default_delimited_logs(&self) -> String {
+            self.get_delimited_logs(DEFAULT_LOG_DELIMITER)
+        }
+
+        pub fn pop_earliest_log(&mut self) -> Option<String> {
+            if self.logs.is_empty() {
+                None
+            }
+            else {
+                Some(self.logs.remove(0))
+            }
+        }
+
+        pub fn new_with_log(new_log: String) -> EFReturnEvent {
+            let mut new_event: EFReturnEvent = EFReturnEvent::new();
+            new_event.add_log(new_log);
+            new_event
+        }
+
+        pub fn new_with_func_info_log(func_name: &str, info: &str) -> EFReturnEvent {
+            let mut new_event: EFReturnEvent = EFReturnEvent::new();
+            new_event.add_func_info_log(func_name, info);
+            new_event
+        }
+
+        pub fn transfer_event(&mut self, event: EFReturnEvent) {
+            for log in event.logs.into_iter() {
+                self.logs.push(log);
+            }
+        }
+
+        pub fn strip_event_from_return<T>(&mut self, ret: EFReturn<T>) -> T {
+            let (value, event) = (ret.value, ret.event);
+            self.transfer_event(event);
+            value
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct EFReturn<T> {
         pub value: T,
-        pub msg: String
+        pub event: EFReturnEvent
     }
 
-    #[derive(Debug)]
-    pub struct EFError {
-        pub function: String,
-        pub line: String,
-        pub msg: String
+    #[derive(Debug, Clone)]
+    pub enum EFReturnEnum<T> {
+        Value(T),
+        Return(EFReturn<T>)
     }
 
-    impl EFError {
-        pub fn to_string(&self) -> String {
-            format!("{:?}", self)
+    impl<T> EFReturn<T> {
+        pub fn new(new_value: T) -> EFReturn<T> {
+            EFReturn { value: new_value, event: EFReturnEvent::new() }
         }
-        
-        // For if I decide to use monad style later
-        pub fn with_added_msg(&mut self, new_msg: &str) {
-            self.msg.push_str(DEFAULT_MSG_DELIMITER);
-            self.msg.push_str(new_msg);
+
+        pub fn compose(new_value: T, new_event: EFReturnEvent) -> EFReturn<T> {
+            EFReturn { value: new_value, event: new_event }
+        }
+
+        pub fn from_enum(ret_enum: EFReturnEnum<T>) -> EFReturn<T> {
+            match ret_enum {
+                EFReturnEnum::Value(v) => EFReturn::new(v),
+                EFReturnEnum::Return(r) => r
+            }
+        }
+
+        pub fn run_mutator(&mut self, mut mutator_func: impl FnMut(&mut EFReturn<T>)) {
+            mutator_func(self);
+        }
+
+        pub fn run_returner(&self, return_func: impl Fn(&EFReturn<T>) -> EFReturn<T>) -> EFReturn<T> {
+            return_func(&self)
+        }
+
+        pub fn run_creator(new_value: T, create_func: impl Fn(T) -> EFReturn<T>) -> EFReturn<T> {
+            create_func(new_value)
+        }
+
+        pub fn run_creator_with_enum(
+            ret_enum: EFReturnEnum<T>,
+            enum_create_func: impl Fn(EFReturnEnum<T>) -> EFReturn<T>
+        ) -> EFReturn<T> {
+            enum_create_func(ret_enum)
+        }
+
+        pub fn new_with_log(new_value: T, new_log: String) -> EFReturn<T> {
+            let mut new_return: EFReturn<T> = EFReturn::new(new_value);
+            new_return.event.add_log(new_log);
+            new_return
+        }
+
+        pub fn new_with_func_info_log(new_value: T, func_name: &str, info: &str) -> EFReturn<T> {
+            let mut new_return: EFReturn<T> = EFReturn::new(new_value);
+            new_return.event.add_func_info_log(func_name, info);
+            new_return
+        }
+
+        pub fn from_enum_with_log(ret_enum: EFReturnEnum<T>, new_log: String) -> EFReturn<T> {
+            let mut new_return: EFReturn<T> = EFReturn::from_enum(ret_enum);
+            new_return.event.add_log(new_log);
+            new_return
+        }
+
+        pub fn from_enum_with_func_info_log(
+            ret_enum: EFReturnEnum<T>, 
+            func_name: &str, 
+            info: &str
+        ) -> EFReturn<T> {
+            let mut new_return: EFReturn<T> = EFReturn::from_enum(ret_enum);
+            new_return.event.add_func_info_log(func_name, info);
+            new_return
+        }
+
+        pub fn decompose(&self) -> (T, EFReturnEvent) {
+            (self.value, self.event)
         }
     }
 
-    pub type EFResult<T> = Result<EFOk<T>, EFError>;
+    pub type EFValueResult<T> = Result<T, EFReturnEvent>;
+
+    pub type EFResult<T> = Result<EFReturn<T>, EFReturnEvent>;
 }
 
 pub mod general {
-    use super::result::{EFOk, EFError, EFResult};
+    use super::result::{EFReturnEvent, EFValueResult};
     use sha2::{Digest, Sha256, Sha512};
 
-    pub fn get_hash(string_vec: Vec<&String>, hash: &String) -> EFResult<String> {
+    pub fn get_hash(string_vec: Vec<&String>, hash: &String) -> EFValueResult<String> {
         let hash_bytes: Vec<u8> = match hash.to_lowercase().as_str() {
             "sha256" | "" => {
                 let mut hasher: Sha256 = Sha256::new();
@@ -179,43 +259,40 @@ pub mod general {
                 hasher.finalize().to_vec()
             },
             _ => {
-                return Err(EFError{
-                    function: String::from("get_hash"), 
-                    line: String::from("hash.to_lowercase().as_str()"), 
-                    msg: format!("An incorrect value was used for hash key.")
-                });
+                return Err(EFReturnEvent::new_with_func_info_log(
+                    "get_hash", 
+                    "An incorrect value was used for hash key."
+                ));
             }
         };
 
         match String::from_utf8(hash_bytes) {
-            Ok(h) => Ok(EFOk { value: h, msg: String::from("Created hash.") }),
-            Err(_) => Err(EFError{
-                function: String::from("get_hash"), 
-                line: String::from("String::from_utf8(hash_bytes)"), 
-                msg: format!("get_hash failed to make a string from a vector.")
-            })
+            Ok(h) => Ok(h),
+            Err(_) => Err(EFReturnEvent::new_with_func_info_log(
+                "get_hash", 
+                "get_hash failed to make a string from a vector."
+            ))
         }
     }
 }
 
 pub mod json {
-    use super::result::{EFOk, EFError, EFResult};
+    use super::result::{EFValueResult, EFReturnEvent};
     use std::{io::Read, path::Path};
     use std::fs::File;
     use serde_json::{Value as JSONValue, from_str as json_from_str};
 
-    pub fn load_json_from_file(file_str: &String) -> EFResult<JSONValue> {
+    pub fn load_json_from_file(file_str: &str) -> EFValueResult<JSONValue> {
         // Create a path
-        let file_path: &Path = Path::new(file_str.as_str());
+        let file_path: &Path = Path::new(file_str);
 
         // Open the file
         let mut file_obj: File = match File::open(file_path) {
             Err(_) => {
-                return Err(EFError{
-                    function: String::from("load_json_from_file"), 
-                    line: String::from("File::open(file_path)"), 
-                    msg: format!("Could not open {}.", file_str)
-                });
+                return Err(EFReturnEvent::new_with_func_info_log(
+                    "load_json_from_file", 
+                    format!("Could not open file at {}.", file_str).as_str()
+                ));
             },
             Ok(f) => f
         };
@@ -223,187 +300,248 @@ pub mod json {
         // Read the file to string
         let mut file_str: String = String::new();
         if file_obj.read_to_string(&mut file_str).is_err() {
-            return Err(EFError{
-                function: String::from("load_json_from_file"), 
-                line: String::from("file_obj.read_to_string(&mut file_str)"), 
-                msg: format!("Could not read {}.", file_str)
-            });
+            return Err(EFReturnEvent::new_with_func_info_log(
+                "load_json_from_file", 
+                format!("Could not read file at {}.", file_str).as_str()
+            ));
         }
 
         // Parse JSON from string
         let file_json: JSONValue = match json_from_str(file_str.as_str()) {
             Err(_) => {
-                return Err(EFError{
-                    function: String::from("load_json_from_file"), 
-                    line: String::from("json_from_str(file_str.as_str())"), 
-                    msg: format!("Could not parse {}.", file_str)
-                });
+                return Err(EFReturnEvent::new_with_func_info_log(
+                    "load_json_from_file", 
+                    format!("Could not parse JSON from {}.", file_str).as_str()
+                ));
             },
             Ok(j) => j
         };
 
         // Return the JSON value
-        Ok(EFOk{ value: file_json, msg: format!("Parsed {}.", file_str)})
+        Ok(file_json)
     }
 }
 
 pub mod membership {
-    pub fn union_of<T>(first_vector: Vec<T>, second_vector: Vec<T>);
-    pub fn intersection_of<T>(first_vector: Vec<T>, second_vector: Vec<T>);
-    pub fn not_intersection_of<T>(first_vector: Vec<T>, second_vector: Vec<T>);
-    pub fn only_in_first<T>(first_vector: Vec<T>, second_vector: Vec<T>);
-    pub fn is_subset_of_first<T>(first_vector: Vec<T>, second_vector: Vec<T>);
+    use std::collections::HashSet;
+    use std::hash::Hash;
+
+    pub fn union_of<T: Clone + Hash + Eq>(first_vector: &Vec<T>, second_vector: &Vec<T>) -> Vec<T> {
+        let mut union_set: HashSet<T> = HashSet::new();
+
+        for item in first_vector {
+            union_set.insert(item.clone());
+        }
+
+        for item in second_vector {
+            union_set.insert(item.clone());
+        }
+
+        union_set.into_iter().collect()
+    }
+
+    pub fn intersection_of<T: Clone + Hash + Eq>(first_vector: &Vec<T>, second_vector: &Vec<T>) -> Vec<T> {
+        let mut first_set: HashSet<T> = HashSet::new();
+        let mut intersection_vec: Vec<T> = Vec::new();
+
+        for item in first_vector {
+            first_set.insert(item.clone());
+        }
+
+        for item in second_vector {
+            if first_set.contains(item) {
+                intersection_vec.push(item.clone());
+            }
+        }
+
+        intersection_vec
+    }
+
+    pub fn not_intersection_of<T: Clone + Hash + Eq>(first_vector: &Vec<T>, second_vector: &Vec<T>) -> Vec<T> {
+        let mut not_intersection_set: HashSet<T> = HashSet::new();
+
+        for item in first_vector {
+            not_intersection_set.insert(item.clone());
+        }
+
+        for item in second_vector {
+            if not_intersection_set.contains(item) {
+                not_intersection_set.remove(item);
+            }
+            else {
+                not_intersection_set.insert(item.clone());
+            }
+        }
+
+        not_intersection_set.into_iter().collect()
+    }
+
+    pub fn only_in_first<T: Clone + Hash + Eq>(first_vector: &Vec<T>, second_vector: &Vec<T>) -> Vec<T> {
+        let mut only_first_set: HashSet<T> = HashSet::new();
+
+        for item in first_vector {
+            only_first_set.insert(item.clone());
+        }
+
+        for item in second_vector {
+            if only_first_set.contains(item) {
+                only_first_set.remove(item);
+            }
+        }
+
+        only_first_set.into_iter().collect()
+    }
+
+    pub fn is_subset_of_first<T: Clone + Hash + Eq>(first_vector: &Vec<T>, second_vector: &Vec<T>) -> bool {
+        let mut first_set: HashSet<T> = HashSet::new();
+
+        for item in first_vector {
+            first_set.insert(item.clone());
+        }
+
+        for item in second_vector {
+            if !first_set.contains(item) {
+                return false;
+            }
+        }
+
+        true
+    }
 }
 
 pub mod os {
-    use super::result::{EFSuccess, EFOk, EFError, EFResult};
+    use super::result::{EFValueResult, EFReturnEvent};
     use std::env::consts::OS;
     use std::env::var as env_var;
     use std::path::Path;
     use std::fs::{create_dir, create_dir_all};
 
-    pub fn get_os_default_folder() -> EFResult<String> {
+    pub fn get_os_default_folder() -> EFValueResult<String> {
         match OS {
             "windows" => {
                 match env_var("APPDATA") {
-                    Ok(v) => Ok(EFOk{ value: v, msg: String::from("Returning value of APPDATA") }),
-                    Err(_) => {
-                        return Err(EFError{
-                            function: String::from("get_os_default_folder"), 
-                            line: String::from("env_var(\"APPDATA\")"), 
-                            msg: format!("Could not find the default application folder for Windows. 
-                                Please set APPDATA.")
-                        });
-                    }
+                    Ok(v) => Ok(v),
+                    Err(_) => Err(EFReturnEvent::new_with_func_info_log(
+                        "get_os_default_folder", 
+                        "Could not find the default application folder for Windows. Please set APPDATA."
+                    ))
                 }
             },
             "linux" | "macos" => {
                 match env_var("HOME") {
-                    Ok(v) => Ok(EFOk{ value: v, msg: String::from("Returning value of HOME") }),
-                    Err(_) => {
-                        return Err(EFError{
-                            function: String::from("get_os_default_folder"), 
-                            line: String::from("env_var(\"HOME\")"), 
-                            msg: format!("Could not find the user's home directory for Linux\\Mac OS. 
-                                Please set HOME.")
-                        });
-                    }
+                    Ok(v) => Ok(v),
+                    Err(_) => Err(EFReturnEvent::new_with_func_info_log(
+                        "get_os_default_folder", 
+                        "Could not find the user's home directory for Linux\\Mac OS. Please set HOME."
+                    ))
                 }
             },
             _ => panic!("Other operating systems aren't supported.")
         }
     }
 
-    pub fn create_folder(path_str: &String, cfinp: &String) -> EFResult<EFSuccess> {
+    pub fn create_folder(path_str: &String, cfinp: &String) -> EFValueResult<()> {
         let path: &Path = Path::new(path_str.as_str());
         match path.is_dir() {
             false => {
                 match cfinp.to_lowercase().as_str() {
                     "true" | "yes" => {
                         match create_dir_all(path) {
-                            Ok(_) => Ok(EFOk{ value: EFSuccess, msg: format!("Created all directories for {}.", path_str) }),
-                            Err(_) => Err(EFError{
-                                function: String::from("create_folder"), 
-                                line: String::from("create_dir_all(path)"), 
-                                msg: format!("Unable to create all directories for {}.", path_str)
-                            })
+                            Ok(_) => Ok(()),
+                            Err(_) => Err(EFReturnEvent::new_with_func_info_log(
+                                "create_folder", 
+                                format!("Unable to create all directories for {}.", path_str).as_str()
+                            ))
                         }
                     },
                     "false" | "no" | "" => {
                         match create_dir(path) {
-                            Ok(_) => Ok(EFOk{ value: EFSuccess, msg: format!("Created directory for {}.", path_str) }),
-                            Err(_) => Err(EFError{
-                                function: String::from("create_folder"), 
-                                line: String::from("create_dir(path)"), 
-                                msg: format!("Unable to create directory for {}.", path_str)
-                            })
+                            Ok(_) => Ok(()),
+                            Err(_) => Err(EFReturnEvent::new_with_func_info_log(
+                                "create_folder", 
+                                format!("Unable to create directory for {}.", path_str).as_str()
+                            ))
                         }
                     },
-                    _ => Err(EFError{
-                        function: String::from("create_folder"), 
-                        line: String::from("cfinp.to_lowercase().as_str()"), 
-                        msg: format!("An incorrect value was used for create_folder_if_no_parent key.")
-                    })
+                    _ => Err(EFReturnEvent::new_with_func_info_log(
+                        "create_folder", 
+                        "An incorrect value was used for create_folder_if_no_parent key."
+                    ))
                 }
             }
-            true => Ok(EFOk{ value: EFSuccess, msg: format!("Directory for {} already exists.", path_str) })
+            true => Err(EFReturnEvent::new_with_func_info_log(
+                "create_folder", 
+                format!("Directory for {} already exists.", path_str).as_str()
+            ))
         }
     }
 }
 
 pub mod vector {
-    use super::result::{EFOk, EFError, EFResult};
+    use super::result::{EFValueResult, EFReturnEvent};
 
-    pub fn get_index_from_generic_vector<T: Clone>(v: &Vec<T>, i: usize) -> EFResult<T> {
-        match v.get(i) {
-            Some(i_v) => Ok(EFOk { 
-                value: i_v.clone(), 
-                msg: format!("Cloned object at index {}", i)
-            }),
-            None => Err(EFError {
-                function: String::from("get_index_from_generic_vector"),
-                line: String::from("v.get(i)"), 
-                msg: format!("Could not get object at index {}", i)
-            })
+    pub fn get_generic_vec_obj<T: Clone>(generic_vec: &Vec<T>, obj_index: usize) -> EFValueResult<T> {
+        match generic_vec.get(obj_index) {
+            Some(obj) => Ok(obj.clone()),
+            None => Err(EFReturnEvent::new_with_func_info_log(
+                "get_generic_vec_obj", 
+                format!("Could not get object at index {}.", obj_index).as_str()
+            ))
         }
     }
 
-    pub fn get_index_range_from_generic_vector<T: Clone>(
-        v: &Vec<T>, 
-        start: Option<usize>, 
-        end: Option<usize>
-    ) -> EFResult<Vec<T>> {
-        let (r, s, e) = match (start, end) {
+    pub fn get_multiple_generic_vec_obj<T: Clone>(
+        generic_vec: &Vec<T>, 
+        start_op: Option<usize>, 
+        end_op: Option<usize>
+    ) -> EFValueResult<Vec<T>> {
+        let (index_range, start_index, end_index) = match (start_op, end_op) {
             // Get only between the bounds
             (Some(s), Some(e)) => (s..e, s, e),
 
             // Get the rest of index after start
-            (Some(s), None) => (s..v.len(), s, v.len()),
+            (Some(s), None) => (s..generic_vec.len(), s, generic_vec.len()),
 
             // Get beginning of index up to end
             (None, Some(e)) => (0..e, 0, e),
 
             // Why would you do this
             (None, None) => {
-                return Err(EFError {
-                    function: String::from("get_index_range_from_generic_vector"),
-                    line: String::from("(start, end)"), 
-                    msg: String::from("No bound passed.")
-                });
+                return Err(EFReturnEvent::new_with_func_info_log(
+                    "get_multiple_generic_vec_obj", 
+                    "No bound passed."
+                ));
             }
         };
 
-        match v.get(r) {
-            Some(ir_v) => return Ok(EFOk { 
-                value: ir_v.to_vec(), 
-                msg: format!("Cloned object from index {} to {}", s, e)
-            }),
-            None => Err(EFError {
-                function: String::from("get_index_from_generic_vector"),
-                line: String::from("v.get(r)"), 
-                msg: format!("Could not get range from index {} to {}", s, e)
-            })
+        match generic_vec.get(index_range) {
+            Some(obj_slice) => Ok(obj_slice.to_vec()),
+            None => return Err(EFReturnEvent::new_with_func_info_log(
+                "get_multiple_generic_vec_obj", 
+                format!("Could not get range from index {} to {}.", start_index, end_index).as_str()
+            ))
         }
     }
 
-    pub fn get_string_from_byte_vector(v: &Vec<u8>) -> EFResult<&str> {
-        match str::from_utf8(v.as_slice()) {
-            Ok(s) => Ok(EFOk{ value: s, msg: String::from("Created string from byte vector.") }),
-            Err(_) => Err(EFError{
-                function: String::from("get_string_from_byte_vector"), 
-                line: String::from("str::from_utf8(v.as_slice())"), 
-                msg: String::from("Passed in byte vector is not compatible with UTF-8.")
-            })
+    pub fn get_str_slice_from_vec_u8(vec_u8: &Vec<u8>) -> EFValueResult<&str> {
+        match str::from_utf8(vec_u8.as_slice()) {
+            Ok(s) => Ok(s),
+            Err(_) => Err(EFReturnEvent::new_with_func_info_log(
+                "get_str_slice_from_vec_u8", 
+                "Passed in byte vector is not compatible with UTF-8."
+            ))
         }
     }
 }
 
 pub mod hashmap {
-    use super::result::{EFOk, EFResult};
     use std::collections::HashMap;
 
-    pub fn get_vector_of_keys_from_generic_hashmap<K: Clone, V>(hm: &HashMap<K, V>) -> EFResult<Vec<K>> {
-        let key_list: Vec<K> = hm.keys().map(|k| k.clone()).collect();
-        Ok(EFOk{ value: key_list, msg: String::from("Got vector of keys.") })
+    pub fn get_keys_vec<K: Clone, V>(generic_hashmap: &HashMap<K, V>) -> Vec<K> {
+        generic_hashmap.keys().cloned().collect()
+    }
+
+    pub fn get_values_vec<K, V: Clone>(generic_hashmap: &HashMap<K, V>) -> Vec<V> {
+        generic_hashmap.values().cloned().collect()
     }
 }

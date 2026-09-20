@@ -3,6 +3,23 @@ use std::fs::{File, OpenOptions};
 use regex::Regex;
 use std::ops::Range;
 
+/*
+ New File Object attributes
+
+ Note: This might warrant upgrading the file tracker to file being an entity component.
+
+ - File path
+ - Name
+ - Type extension
+ - Validity Period (Permenant or Temporary with Expiration Date)
+ - Retention Period (Permenant or Temporary with Expiration Date)
+ - Encryption Status
+ - Version Tracking
+ - Last Created, Accessed, Modified (Create a struct that contains these things for repeated use)
+ - File Size
+ - Checksum
+*/
+
 #[derive(Debug)]
 pub struct EFFileName(String);
 

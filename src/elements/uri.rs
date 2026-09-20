@@ -1,7 +1,3 @@
-use crate::elements::byte_rep::EFByteVecCompatible;
-use crate::utils::result::{EFOk, EFError, EFResult};
-use crate::utils::vector::{get_index_from_generic_vector, get_index_range_from_generic_vector};
-use crate::elements::byte_rep::enum_helper::*;
 use std::hash::Hash;
 
 #[derive(Debug)]
@@ -9,52 +5,6 @@ pub enum EFURIAuthority {
     Global,
     Local,
     Connection(String)
-}
-
-impl EFByteVecCompatible for EFURIAuthority where Self: Sized {
-    fn to_byte_vec(&self) -> EFResult<Vec<u8>> {
-        match self {
-            EFURIAuthority::Global => Ok(EFOk{
-                value: vec![0u8], 
-                msg: String::from("Created byte vector for URI authority.")
-            }),
-            EFURIAuthority::Local => Ok(EFOk{
-                value: vec![1u8], 
-                msg: String::from("Created byte vector for URI authority.")
-            }),
-            EFURIAuthority::Connection(enum_str) => Ok(EFOk{
-                value: get_byte_vector_from_enum_and_string(2u8, enum_str), 
-                msg: String::from("Created byte vector for URI authority.")
-            })
-        }
-    }
-
-    fn from_byte_vec(byte_vec: &Vec<u8>) -> EFResult<Self> where Self: Sized {
-        let (type_byte, type_str) = match get_enum_and_string_from_byte_vector(byte_vec) {
-            Ok(res_tuple) => res_tuple.value,
-            Err(e) => { return Err(e); }
-        };
-
-        match type_byte {
-            0u8 if type_str.is_empty() => Ok(EFOk{
-                value: EFURIAuthority::Global, 
-                msg: String::from("Returned global.")
-            }),
-            1u8 if type_str.is_empty() => Ok(EFOk{
-                value: EFURIAuthority::Local, msg: String::from("Returned local.")
-            }),
-            2u8 if !type_str.is_empty() => Ok(EFOk{
-                value: EFURIAuthority::Connection(type_str), 
-                msg: String::from("Returned connection.") 
-            }),
-            _ => Err(EFError { 
-                function: String::from("from_byte_vec"), 
-                line: String::from("match type_byte"), 
-                msg: String::from("Value must be within the range of 0 to 2 (inclusive)
-                    and only return a string for connection for EFURIAuthority.")
-            })
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -72,100 +22,10 @@ impl EFURITarget {
     }
 }
 
-impl EFByteVecCompatible for EFURITarget where Self: Sized {
-    fn to_byte_vec(&self) -> EFResult<Vec<u8>> {
-        match self {
-            EFURITarget::ID(enum_str) => Ok(EFOk{
-                value: get_byte_vector_from_enum_and_string(0u8, enum_str), 
-                msg: String::from("Created byte vector for URI target.")
-            }),
-            EFURITarget::Name(enum_str) => Ok(EFOk{
-                value: get_byte_vector_from_enum_and_string(1u8, enum_str), 
-                msg: String::from("Created byte vector for URI target.")
-            })
-        }
-    }
-
-    fn from_byte_vec(byte_vec: &Vec<u8>) -> EFResult<Self> where Self: Sized {
-        let (type_byte, type_str) = match get_enum_and_string_from_byte_vector(byte_vec) {
-            Ok(res_tuple) => res_tuple.value,
-            Err(e) => { return Err(e); }
-        };
-
-        match type_byte {
-            0u8 if !type_str.is_empty() => Ok(EFOk{
-                value: EFURITarget::ID(type_str), 
-                msg: String::from("Returned id.")
-            }),
-            1u8 if !type_str.is_empty() => Ok(EFOk{
-                value: EFURITarget::Name(type_str), 
-                msg: String::from("Returned name.")
-            }),
-            _ => Err(EFError { 
-                function: String::from("from_byte_vec"), 
-                line: String::from("match type_byte"), 
-                msg: String::from("Value must be within the range of 0 to 1 (inclusive)
-                    and must return a string for EFURITarget.")
-            })
-        }
-    }
-}
-
 #[derive(Debug)]
 pub enum EFURIPathComponent {
     System(EFURITarget),
     Parent
-}
-
-impl EFByteVecCompatible for EFURIPathComponent where Self: Sized {
-    fn to_byte_vec(&self) -> EFResult<Vec<u8>> {
-        match self {
-            EFURIPathComponent::System(enum_target) => {
-                let mut byte_vec: Vec<u8> = vec![0u8];
-                let mut enum_target_vec: Vec<u8> = match enum_target.to_byte_vec() {
-                    Ok(v) => v.value,
-                    Err(e) => { return Err(e); }
-                };
-                byte_vec.append(&mut enum_target_vec);
-                Ok(EFOk{value: byte_vec, msg: String::from("Created byte vector for URI path component.")})
-            },
-            EFURIPathComponent::Parent => Ok(EFOk{
-                value: vec![1u8], 
-                msg: String::from("Created byte vector for URI path component.")
-            })
-        }
-    }
-
-    fn from_byte_vec(byte_vec: &Vec<u8>) -> EFResult<Self> where Self: Sized {
-        let type_byte: u8 = match get_index_from_generic_vector(byte_vec, 0) {
-            Ok(index_object) => index_object.value,
-            Err(e) => { return Err(e); }
-        };
-
-        match type_byte {
-            0u8 => {
-                match get_index_range_from_generic_vector(byte_vec, Some(1), None) {
-                    Ok(index_range) => match EFURITarget::from_byte_vec(&index_range.value) {
-                        Ok(eon) => Ok(EFOk{
-                            value: EFURIPathComponent::System(eon.value), 
-                            msg: String::from("Returned system.")
-                        }),
-                        Err(e) => Err(e)
-                    },
-                    Err(e) => Err(e)
-                }
-            },
-            1u8 if byte_vec.len() == 1 => Ok(EFOk{
-                value: EFURIPathComponent::Parent, msg: String::from("Returned parent.")
-            }),
-            _ => Err(EFError { 
-                function: String::from("from_byte_vec"), 
-                line: String::from("match type_byte"), 
-                msg: String::from("Value must be within the range of 0 to 1 (inclusive)
-                    and must return data only for System for EFURIPathComponent.")
-            })
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -223,13 +83,6 @@ impl EFURI {
         // Return the string
         EFURIString(builder)
     }
-}
-
-#[derive(Debug)]
-pub enum EFComponentProcedure {
-    GetComponentAsOlder,
-    GetComponentVersion,
-    CustomProcedure(u8)
 }
 
 #[derive(Debug)]

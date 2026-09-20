@@ -6,8 +6,8 @@ use crate::elements::*;
 use crate::elements::file::*;
 use crate::elements::timestamp::EFUTCTimestamp;
 use crate::elements::uri::{EFURIString};
-use crate::utils::result::*;
-use crate::elements::rule::*;
+use crate::utils::result::{EFResult, EFReturnEvent, EFValueResult};
+use crate::elements::rule::{EFPrivilege, EFRuleEffect, EFRuleTrackerRequest, EFRuleTrackerResponse};
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum EFEntityPrivilege {
@@ -15,15 +15,18 @@ pub enum EFEntityPrivilege {
     CloneEntity,
     GetMetadata, // Timestamps, name, ID, owner, system
     SetMetadata, // Timestamps, name, owner
-    AccessUserRules, // Only see rules set for user
-    AccessRuleTracker, 
-    ModifyRuleTracker,
-    AccessUserFiles, // Only see files made by user
-    AccessFileTracker,
-    ModifyFileTracker,
-    AccessComponent,
-    ModifyComponent,
-    UseComponent // Use the handler API
+    AccessUserRules,
+    AccessRules,
+    ModifyRules,
+    AccessFiles,
+    ModifyFiles,
+    AccessTags,
+    ModifyTags,
+    GetComponentMetadata,
+    BorrowComponent,
+    BorrowMutableComponent,
+    CloneComponent,
+    UseComponentHandler
 }
 
 impl EFPrivilege for EFEntityPrivilege {
@@ -34,14 +37,17 @@ impl EFPrivilege for EFEntityPrivilege {
             EFEntityPrivilege::GetMetadata => "Get Metadata",
             EFEntityPrivilege::SetMetadata => "Set Metadata",
             EFEntityPrivilege::AccessUserRules => "Access User Rules",
-            EFEntityPrivilege::AccessRuleTracker => "Access Rule Tracker",
-            EFEntityPrivilege::ModifyRuleTracker => "Modify Rule Tracker",
-            EFEntityPrivilege::AccessUserFiles => "Access User Files",
-            EFEntityPrivilege::AccessFileTracker => "Access File Tracker",
-            EFEntityPrivilege::ModifyFileTracker => "Modify File Tracker",
-            EFEntityPrivilege::AccessComponent => "Access Component",
-            EFEntityPrivilege::ModifyComponent => "Modify Component",
-            EFEntityPrivilege::UseComponent => "Use Component"
+            EFEntityPrivilege::AccessRules => "Access Rules",
+            EFEntityPrivilege::ModifyRules => "Modify Rules",
+            EFEntityPrivilege::AccessFiles => "Access Files",
+            EFEntityPrivilege::ModifyFiles => "Modify Files",
+            EFEntityPrivilege::AccessTags => "Access Tags",
+            EFEntityPrivilege::ModifyTags => "Modify Tags",
+            EFEntityPrivilege::GetComponentMetadata => "Get Component Metadata",
+            EFEntityPrivilege::BorrowComponent => "Borrow Component",
+            EFEntityPrivilege::BorrowMutableComponent => "Borrow Mutable Component",
+            EFEntityPrivilege::CloneComponent => "CloneComponent",
+            EFEntityPrivilege::UseComponentHandler => "Use Component Handler",
         }
     }
 
@@ -52,14 +58,17 @@ impl EFPrivilege for EFEntityPrivilege {
             String::from("Get Metadata"),
             String::from("Set Metadata"),
             String::from("Access User Rules"),
-            String::from("Access Rule Tracker"),
-            String::from("Modify Rule Tracker"),
-            String::from("Access User Files"),
-            String::from("Access File Tracker"),
-            String::from("Modify File Tracker"),
-            String::from("Access Component"),
-            String::from("Modify Component"),
-            String::from("Use Component"),
+            String::from("Access Rules"),
+            String::from("Modify Rules"),
+            String::from("Access Files"),
+            String::from("Modify Files"),
+            String::from("Access Tags"),
+            String::from("Modify Tags"),
+            String::from("Get Component Metadata"),
+            String::from("Borrow Component"),
+            String::from("Borrow Mutable Component"),
+            String::from("Clone Component"),
+            String::from("Use Component Handler"),
         ]
     }
 }
@@ -67,15 +76,43 @@ impl EFPrivilege for EFEntityPrivilege {
 #[derive(Debug)]
 pub struct EFEntityName(String);
 
-pub fn valid_entity_name(entity_name: String) -> bool {
-    entity_name.chars().all(|c: char | c.is_alphanumeric() || c == '_' || c == '-' || c == ' ')
+impl EFEntityName {
+    pub fn new_if_valid(new_name: &String) -> EFValueResult<EFEntityName> {
+        let is_valid: bool = new_name.chars().all(|c: char| {
+            c.is_alphanumeric() || c == '_' || c == '-' || c == ' '
+        });
+
+        if is_valid {
+            Ok(EFEntityName(new_name.clone()))
+        }
+        else {
+            Err(EFReturnEvent::new_with_func_info_log(
+                "new_if_valid", 
+                "New name is not valid."
+            ))
+        }
+    }
 }
 
 #[derive(Debug)]
 pub struct EFEntityId(String);
 
-pub fn valid_entity_id(entity_id: String) -> bool {
-    entity_id.chars().all(|c: char | c.is_ascii_hexdigit())
+impl EFEntityId {
+    pub fn new_if_valid(new_id: &String) -> EFValueResult<EFEntityId> {
+        let is_valid: bool = new_id.chars().all(|c: char| {
+            c.is_ascii_hexdigit()
+        });
+
+        if is_valid {
+            Ok(EFEntityId(new_id.clone()))
+        }
+        else {
+            Err(EFReturnEvent::new_with_func_info_log(
+                "new_if_valid", 
+                "New id is not valid."
+            ))
+        }
+    }
 }
 
 pub trait EFEntity {
@@ -100,46 +137,46 @@ pub trait EFEntity {
         &self, 
         current_id: &EFURIString,
         target_privilege: EFEntityPrivilege
-    ) -> EFResult<EFSuccess>;
+    ) -> EFValueResult<EFRuleEffect>;
 
     // Work with entity's ID
-    fn get_id(&self, current_id: &EFURIString) -> EFResult<&EFEntityId>;
+    fn get_id(&self, current_id: &EFURIString) -> EFValueResult<&EFEntityId>;
 
     // Work with entity's name
-    fn get_name(&self, current_id: &EFURIString) -> EFResult<&EFEntityName>;
+    fn get_name(&self, current_id: &EFURIString) -> EFValueResult<&EFEntityName>;
     fn set_name(
         &mut self, 
         current_id: &EFURIString,
-        new_name: EFEntityName
-    ) -> EFResult<EFSuccess>;
+        new_name: &String
+    ) -> EFResult<&EFEntityName>;
 
     // Work with owner of entity
-    fn get_owner(&self, current_id: &EFURIString) -> EFResult<&EFURIString>;
+    fn get_owner(&self, current_id: &EFURIString) -> EFValueResult<&EFURIString>;
     fn set_owner(
         &mut self, 
         current_id: &EFURIString, 
-        new_owner: EFURIString
-    ) -> EFResult<EFSuccess>;
+        new_owner: &EFURIString
+    ) -> EFResult<&EFURIString>;
 
     // Work with entity's system
-    fn get_system(&self, current_id: &EFURIString) -> EFResult<&EFURIString>;
+    fn get_system(&self, current_id: &EFURIString) -> EFValueResult<&EFURIString>;
 
     // Work with creation date, last accessed date, and last modified date
-    fn get_last_created(&self, current_id: &EFURIString) -> EFResult<&EFUTCTimestamp>;
+    fn get_last_created(&self, current_id: &EFURIString) -> EFValueResult<&EFUTCTimestamp>;
 
-    fn get_last_accessed(&self, current_id: &EFURIString) -> EFResult<&EFUTCTimestamp>;
+    fn get_last_accessed(&self, current_id: &EFURIString) -> EFValueResult<&EFUTCTimestamp>;
     fn set_last_accessed(
         &mut self, 
         current_id: &EFURIString, 
-        new_timestamp: EFUTCTimestamp
-    ) -> EFResult<EFSuccess>;
+        new_timestamp: &EFUTCTimestamp
+    ) -> EFResult<&EFUTCTimestamp>;
 
-    fn get_last_modified(&self, current_id: &EFURIString) -> EFResult<&EFUTCTimestamp>;
+    fn get_last_modified(&self, current_id: &EFURIString) -> EFValueResult<&EFUTCTimestamp>;
     fn set_last_modified(
         &mut self, 
         current_id: &EFURIString,
-        new_timestamp: EFUTCTimestamp
-    ) -> EFResult<EFSuccess>;
+        new_timestamp: &EFUTCTimestamp
+    ) -> EFResult<&EFUTCTimestamp>;
 
     // Work with entity's rules
     fn rule_tracker_action(
@@ -155,20 +192,29 @@ pub trait EFEntity {
         request: &EFFileTrackerRequest
     ) -> EFResult<EFFileTrackerResponse>;
 
-    // Work with entity's component
-    fn borrow_component(&self, current_id: &EFURIString) -> EFResult<&Self::ComponentType>;
+    // Work with entity's tags
+    // Note: When creating a tagging system, some tags can imply other tags
+    fn tag_tracker_action(
+        &mut self, 
+        current_id: &EFURIString,
+        request: &EFTagTrackerRequest
+    ) -> EFResult<EFTagTrackerResponse>;
+
+    // Get component metadata
+    fn get_component_version(&self, current_id: &EFURIString) -> EFResult<&EFVersion>;
+    fn get_component_type(&self, current_id: &EFURIString) -> EFResult<&str>;
+
+    // Borrow an entity's component
+    fn borrow_component(&self, current_id: &EFURIString) -> EFValueResult<&Self::ComponentType>;
     fn borrow_mutable_component(
         &mut self,
         current_id: &EFURIString
-    ) -> EFResult<&mut Self::ComponentType>;
-    fn clone_component(&self, current_id: &EFURIString) -> EFResult<Self::ComponentType>;
-    fn get_component_as_older(
-        &self, 
-        current_id: &EFURIString, 
-        old_version: &EFVersion
-    ) -> EFResult<EFComponentTuple>;
-    fn get_component_version(&self, current_id: &EFURIString) -> EFResult<&EFVersion>;
-    fn get_component_type(&self, current_id: &EFURIString) -> EFResult<&str>;
+    ) -> EFValueResult<&mut Self::ComponentType>;
+
+    // Clone the component
+    fn clone_component(&self, current_id: &EFURIString) -> EFValueResult<Self::ComponentType>;
+
+    // Handle a component request
     fn handle_component_request(
         &self,
         current_id: &EFURIString,
@@ -180,15 +226,15 @@ pub trait EFEntityTracker {
     type EntityType: EFEntity;
 
     fn new() -> Self;
-    fn get_entity_count(&self) -> EFResult<usize>;
-    fn get_entity_names(&self) -> EFResult<Vec<EFEntityName>>;
-    fn get_entity_ids(&self) -> EFResult<Vec<EFEntityId>>;
+    fn get_entity_count(&self) -> usize;
+    fn get_entity_names(&self) -> Vec<EFEntityName>;
+    fn get_entity_ids(&self) -> Vec<EFEntityId>;
 
-    fn add_entity(&self, new_entity: Self::EntityType) -> EFResult<EFSuccess>;
-    fn get_entity_by_name(&self, name: &EFEntityName) -> EFResult<&Self::EntityType>;
-    fn get_entity_by_id(&self, id: &EFEntityId) -> EFResult<&Self::EntityType>;
-    fn get_mutable_entity_by_name(&mut self, name: &EFEntityName) -> EFResult<&mut Self::EntityType>;
-    fn get_mutable_entity_by_id(&mut self, id: &EFEntityId) -> EFResult<&mut Self::EntityType>;
-    fn pop_entity_by_name(&self, name: &EFEntityName) -> EFResult<Self::EntityType>;
-    fn pop_entity_by_id(&self, id: &EFEntityId) -> EFResult<Self::EntityType>;
+    fn add_entity(&self, new_entity: Self::EntityType) -> EFResult<&EFEntityId>;
+    fn get_entity_by_name(&self, entity_name: &String) -> EFResult<&Self::EntityType>;
+    fn get_entity_by_id(&self, entity_id: &String) -> EFResult<&Self::EntityType>;
+    fn get_mutable_entity_by_name(&mut self, entity_name: &String) -> EFResult<&mut Self::EntityType>;
+    fn get_mutable_entity_by_id(&mut self, entity_id: &String) -> EFResult<&mut Self::EntityType>;
+    fn pop_entity_by_name(&self, entity_name: &String) -> EFResult<Self::EntityType>;
+    fn pop_entity_by_id(&self, entity_id: &String) -> EFResult<Self::EntityType>;
 }
