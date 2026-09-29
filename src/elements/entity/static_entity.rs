@@ -7,9 +7,10 @@ pub struct EFStaticEntity<T: EFComponent> {
     owner: EFURIString,
     system: EFURIString,
     time_metadata: EFTimeMetadata,
+    validity: EFTimePeriod,
+    retention: EFTimePeriod,
     rules: EFBasicRuleTracker<EFEntityPrivilege>,
-    files: EFBasicFileTracker,
-    tags: EFBasicTagTracker,
+    tags: Vec<EFURIString>,
     component: T,
 }
 

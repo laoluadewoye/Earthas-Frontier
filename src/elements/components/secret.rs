@@ -1,5 +1,7 @@
 use super::*;
 
+/* Secrets can be a key input, a value input, a token, etc.. */
+
 #[derive(Debug)]
 pub struct EFSecret {
     secret: EFString,

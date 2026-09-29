@@ -7,28 +7,22 @@ use crate::elements::{
     EFName, 
     EFId
 };
-use crate::elements::timestamp::{EFUTCTimestamp, EFTimeMetadata};
+use crate::elements::timestamp::{EFUTCTimestamp, EFTimeMetadata, EFTimePeriod};
 use crate::elements::uri::{EFURIString};
 use crate::utils::result::{EFResult, EFValueResult};
 use crate::elements::rule::{
-    EFRulePrivilege, 
-    EFRuleEffect, 
-    EFRuleTrackerRequest, 
-    EFRuleTrackerResponse,
-    EFBasicRuleTracker
+    EFBasicRuleTracker, EFRuleEffect, EFRulePrivilege, EFRuleTracker, EFRuleTrackerRequest, EFRuleTrackerResponse
 };
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum EFEntityPrivilege {
     Owner, // Supercedes all other privileges
     CloneEntity,
-    GetMetadata, // Timestamps, name, ID, owner, system
-    SetMetadata, // Timestamps, name, owner
+    GetMetadata, // time metadata, name, ID, owner, system, validity, retention
+    SetMetadata, // time metadata, name, owner, validity, retention
     AccessUserRules,
     AccessRules,
     ModifyRules,
-    AccessFiles,
-    ModifyFiles,
     AccessTags,
     ModifyTags,
     GetComponentMetadata,
@@ -48,8 +42,6 @@ impl EFRulePrivilege for EFEntityPrivilege {
             EFEntityPrivilege::AccessUserRules => "Access User Rules",
             EFEntityPrivilege::AccessRules => "Access Rules",
             EFEntityPrivilege::ModifyRules => "Modify Rules",
-            EFEntityPrivilege::AccessFiles => "Access Files",
-            EFEntityPrivilege::ModifyFiles => "Modify Files",
             EFEntityPrivilege::AccessTags => "Access Tags",
             EFEntityPrivilege::ModifyTags => "Modify Tags",
             EFEntityPrivilege::GetComponentMetadata => "Get Component Metadata",
@@ -69,8 +61,6 @@ impl EFRulePrivilege for EFEntityPrivilege {
             String::from("Access User Rules"),
             String::from("Access Rules"),
             String::from("Modify Rules"),
-            String::from("Access Files"),
-            String::from("Modify Files"),
             String::from("Access Tags"),
             String::from("Modify Tags"),
             String::from("Get Component Metadata"),
@@ -84,6 +74,8 @@ impl EFRulePrivilege for EFEntityPrivilege {
 
 pub trait EFEntity {
     type EntityType: EFEntity;
+    type PrivilegeType: EFRulePrivilege;
+    type RuleTrackerType: EFRuleTracker;
     type ComponentType: EFComponent;
     type ComponentRequestType: EFComponentRequest;
     type ComponentResponseType: EFComponentResponse;
@@ -103,7 +95,7 @@ pub trait EFEntity {
     fn check_privilege(
         &self, 
         current_id: &EFURIString,
-        target_privilege: EFEntityPrivilege
+        target_privilege: Self::PrivilegeType
     ) -> EFValueResult<EFRuleEffect>;
 
     // Work with entity's ID
@@ -145,27 +137,46 @@ pub trait EFEntity {
         new_timestamp: &EFUTCTimestamp
     ) -> EFResult<()>;
 
+    // Work with validity and retention periods
+    fn get_validity_period(&self, current_id: &EFURIString) -> EFValueResult<&EFTimePeriod>;
+    fn set_validity_period(
+        &mut self, 
+        current_id: &EFURIString,
+        new_time_period: &EFTimePeriod
+    ) -> EFResult<()>;
+
+    fn get_retention_period(&self, current_id: &EFURIString) -> EFValueResult<&EFTimePeriod>;
+    fn set_retention_period(
+        &mut self, 
+        current_id: &EFURIString,
+        new_time_period: &EFTimePeriod
+    ) -> EFResult<()>;
+
     // Work with entity's rules
     fn rule_tracker_action(
         &mut self, 
         current_id: &EFURIString,
-        request: &EFRuleTrackerRequest<EFEntityPrivilege>
-    ) -> EFResult<EFRuleTrackerResponse<EFEntityPrivilege>>;
-
-    // Work with entity's files
-    fn file_tracker_action(
-        &mut self, 
-        current_id: &EFURIString,
-        request: &EFFileTrackerRequest
-    ) -> EFResult<EFFileTrackerResponse>;
+        request: &EFRuleTrackerRequest<Self::PrivilegeType>
+    ) -> EFResult<EFRuleTrackerResponse<Self::PrivilegeType>>;
 
     // Work with entity's tags
-    // Note: When creating a tagging system, some tags can imply other tags
-    fn tag_tracker_action(
+    // Tag list should be a hash set
+    fn get_tags(&self, current_id: &EFURIString) -> EFResult<Vec<&EFURIString>>;
+    fn check_for_tag(
+        &self, 
+        current_id: &EFURIString,
+        tag_id: &EFURIString
+    ) -> EFResult<bool>;
+    fn add_tag(
         &mut self, 
         current_id: &EFURIString,
-        request: &EFTagTrackerRequest
-    ) -> EFResult<EFTagTrackerResponse>;
+        new_tag_id: &EFURIString
+    ) -> EFResult<()>;
+    fn remove_tag(
+        &mut self, 
+        current_id: &EFURIString,
+        old_tag_id: &EFURIString
+    ) -> EFResult<()>;
 
     // Get component metadata
     fn get_component_version(&self, current_id: &EFURIString) -> EFResult<&EFVersion>;

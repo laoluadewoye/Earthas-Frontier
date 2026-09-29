@@ -1,5 +1,5 @@
-use crate::elements::{EFVersion, EFComponent};
-use crate::elements::timestamp::EFUTCTimestamp;
+use crate::elements::{EFVersion, EFComponent, EFName, EFId};
+use crate::elements::timestamp::{EFUTCTimestamp, EFTimePeriod};
 use crate::elements::uri::{EFURIString};
 use crate::elements::common::string::EFString;
 use crate::utils::result::*;
