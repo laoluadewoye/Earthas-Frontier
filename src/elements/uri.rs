@@ -1,102 +1,81 @@
-use std::hash::Hash;
+use std::net::{IpAddr};
+use strum_macros::Display as Strum_Display;
+use super::formats::{EFDomainName, EFName, EFId, EFElementName, EFRequestName};
 
-#[derive(Debug)]
+#[derive(Strum_Display)]
+pub enum EFURIConnection {
+    #[strum(to_string = "Ip:{0}")]
+    Ip(IpAddr),
+
+    #[strum(to_string = "Domain:{0}")]
+    Domain(EFDomainName)
+}
+
+#[derive(Strum_Display)]
 pub enum EFURIAuthority {
     Global,
     Local,
-    Connection(String)
+
+    #[strum(to_string = "Connection:{0}")]
+    Connection(EFURIConnection)
 }
 
-#[derive(Debug, Clone)]
-pub enum EFURITarget {
-    ID(String),
-    Name(String)
+pub struct EFURIPath(EFName);
+
+#[derive(Strum_Display)]
+pub enum EFURIEntity {
+    #[strum(to_string = "Id:{0}")]
+    Id(EFId),
+
+    #[strum(to_string = "Name:{0}")]
+    Name(EFName)
 }
 
-impl EFURITarget {
-    pub fn to_type_and_string(&self) -> (&str, &String) {
-        match self {
-            EFURITarget::ID(s) => ("id", s),
-            EFURITarget::Name(s) => ("name", s)
-        }
-    }
-}
+pub struct EFURIString(String);
 
-#[derive(Debug)]
-pub enum EFURIPathComponent {
-    System(EFURITarget),
-    Parent
-}
-
-#[derive(Debug)]
 pub struct EFURI {
     authority: EFURIAuthority,
-    path_from_authority: Vec<EFURIPathComponent>,
-    component_fragment: String,
-    entity_target: EFURITarget
+    paths: Vec<EFURIPath>,
+    element: EFElementName,
+    entity: EFURIEntity,
+    request: EFRequestName
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EFURIString(pub String);
 
 impl EFURI {
     pub fn to_uri_string(&self) -> EFURIString {
-        let mut builder: String = String::new();
+        let mut new_uri_string: String = String::from("$");
 
         // Add authority
-        match &self.authority {
-            EFURIAuthority::Global => builder.push_str("$global://"),
-            EFURIAuthority::Local => builder.push_str("$local://"),
-            EFURIAuthority::Connection(remote_address) => {
-                builder.push_str("$connection:");
-                builder.push_str(remote_address.as_str());
-                builder.push_str("://");
-            }
-        };
+        new_uri_string.push_str(&self.authority.to_string().as_str());
+        new_uri_string.push('/');
 
-        // Add path
-        for path_component in &self.path_from_authority {
-            match path_component {
-                EFURIPathComponent::Parent => builder.push_str("../"),
-                EFURIPathComponent::System(target) => {
-                    let (target_type, target_string) = target.to_type_and_string();
-                    builder.push_str(target_type);
-                    builder.push(':');
-                    builder.push_str(target_string.as_str());
-                    builder.push('/');
-                }
-            };
+        // Add paths
+        for path in self.paths.iter() {
+            new_uri_string.push_str(path.0.0.as_str());
+            new_uri_string.push('/');
         }
 
-        // Add fragment
-        builder.push('#');
-        builder.push_str(self.component_fragment.as_str());
+        // Add element
+        new_uri_string.push('#');
+        new_uri_string.push_str(self.element.0.as_str());
+        new_uri_string.push('/');
 
-        // Add target
-        builder.push('?');
+        // Add entity specifier
+        new_uri_string.push_str(&self.entity.to_string().as_str());
+        new_uri_string.push('?');
 
-        let (et_type, et_string) = self.entity_target.to_type_and_string();
-        builder.push_str(et_type);
-        builder.push(':');
-        builder.push_str(et_string.as_str());
+        // Add request
+        new_uri_string.push_str(&self.request.0.as_str());
 
-        // Return the string
-        EFURIString(builder)
+        // Return URI string
+        EFURIString(new_uri_string)
     }
 }
 
-#[derive(Debug)]
-pub struct EFRequest;
-// {
-//     sending_entity: EFID,
-//     reciving_entity: EFID,
-//     query: Vec<String>
-// }
+pub struct EFRequest {
 
-#[derive(Debug)]
-pub struct EFResponse;
-// {
-//     sending_entity: EFID,
-//     reciving_entity: EFID,
-//     response: Vec<EFResult<EFByteRep>>
-// }
+}
+
+pub struct EFResponse {
+
+}

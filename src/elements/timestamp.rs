@@ -1,4 +1,4 @@
-use crate::utils::result::{EFValueResult, EFReturnEvent};
+use super::*;
 use chrono::{DateTime, Utc, FixedOffset, TimeDelta};
 
 #[derive(Debug, Clone)]
@@ -11,7 +11,7 @@ pub enum EFUTCOffsetHemisphere {
 pub struct EFUTCTimestamp(pub DateTime<Utc>);
 
 impl EFUTCTimestamp {
-    pub fn new_for_now() -> EFUTCTimestamp {
+    pub fn new_now_timestamp() -> EFUTCTimestamp {
         EFUTCTimestamp(Utc::now())
     }
 
@@ -19,8 +19,8 @@ impl EFUTCTimestamp {
         match DateTime::parse_from_rfc3339(s) {
             Ok(d) => Ok(EFUTCTimestamp(d.to_utc())),
             Err(_) => Err(EFReturnEvent::new_with_func_info_log(
-                "from_str", 
-                "Could not parse RFC 3339 string into UTC timestamp."
+                "EFUTCTimestamp::from_str", 
+                "Expected RFC 3339 string slice and could not parse into UTC timestamp."
             ))
         }
     }
@@ -32,26 +32,32 @@ impl EFUTCTimestamp {
     pub fn to_utc_offset(
         &self, 
         hemisphere: EFUTCOffsetHemisphere, 
-        offset_hours: u32, offset_minutes: u32
+        offset_hours: i32, offset_minutes: i32, offset_seconds: i32
     ) -> EFValueResult<DateTime<FixedOffset>> {
-        let offset_seconds: i32 = (offset_hours * 3600 + offset_minutes * 60) as i32;
-        let (offset, hemisphere_str) = match hemisphere {
-            EFUTCOffsetHemisphere::East => match FixedOffset::east_opt(offset_seconds) {
-                Some(fo) => (fo, "east"),
+        let total_offset_seconds: i32 = offset_hours * 3600 + offset_minutes * 60 + offset_seconds;
+        let offset = match hemisphere {
+            EFUTCOffsetHemisphere::East => match FixedOffset::east_opt(total_offset_seconds) {
+                Some(o) => o,
                 None => {
                     return Err(EFReturnEvent::new_with_func_info_log(
-                        "to_utc_offset", 
-                        format!("Offset of {} seconds for eastern hemisphere not within range.", offset_seconds).as_str()
-                    ));
+                        "EFUTCTimestamp::to_utc_offset", 
+                        format!(
+                            "Offset of {} seconds for east hemisphere not within range.", 
+                            total_offset_seconds
+                        ).as_str()
+                    )); 
                 }
             },
-            EFUTCOffsetHemisphere::West => match FixedOffset::west_opt(offset_seconds) {
-                Some(fo) => (fo, "west"),
+            EFUTCOffsetHemisphere::West => match FixedOffset::west_opt(total_offset_seconds) {
+                Some(o) => o,
                 None => {
                     return Err(EFReturnEvent::new_with_func_info_log(
-                        "to_utc_offset", 
-                        format!("Offset of {} seconds for western hemisphere not within range.", offset_seconds).as_str()
-                    ));
+                        "EFUTCTimestamp::to_utc_offset", 
+                        format!(
+                            "Offset of {} seconds for west hemisphere not within range.", 
+                            total_offset_seconds
+                        ).as_str()
+                    )); 
                 }
             }
         };
@@ -64,7 +70,7 @@ impl EFUTCTimestamp {
             Some(d) => d,
             None => {
                 return Err(EFReturnEvent::new_with_func_info_log(
-                    "apply_delta", 
+                    "EFUTCTimestamp::apply_delta", 
                     "Either the duration is out of bounds or nanoseconds is greater than or equal to one billion."
                 ))
             }
@@ -79,13 +85,12 @@ impl EFUTCTimestamp {
         self.apply_delta(seconds, 0)
     }
 
-
     pub fn return_with_delta(&self, seconds: i64, nanoseconds: u32) -> EFValueResult<EFUTCTimestamp> {
         let new_delta: TimeDelta = match TimeDelta::new(seconds, nanoseconds) {
             Some(d) => d,
             None => {
                 return Err(EFReturnEvent::new_with_func_info_log(
-                    "apply_delta", 
+                    "EFUTCTimestamp::return_with_delta", 
                     "Either the duration is out of bounds or nanoseconds is greater than or equal to one billion."
                 ))
             }
@@ -102,14 +107,14 @@ impl EFUTCTimestamp {
 
 #[derive(Debug, Clone)]
 pub struct EFTimeMetadata {
-    created: EFUTCTimestamp,
-    last_accessed: EFUTCTimestamp,
-    last_modified: EFUTCTimestamp
+    pub created: EFUTCTimestamp,
+    pub last_accessed: EFUTCTimestamp,
+    pub last_modified: EFUTCTimestamp
 }
 
 impl EFTimeMetadata {
     pub fn new() -> EFTimeMetadata {
-        let new_timestamp: EFUTCTimestamp = EFUTCTimestamp::new_for_now();
+        let new_timestamp: EFUTCTimestamp = EFUTCTimestamp::new_now_timestamp();
 
         EFTimeMetadata {
             created: new_timestamp.clone(),
@@ -124,7 +129,7 @@ impl EFTimeMetadata {
             Err(e) => {
                 return Err(EFReturnEvent::with_added_func_info_log(
                     e, 
-                    "new_from_str", 
+                    "EFTimeMetadata::new_from_str", 
                     "Could not make new time metadata object."
                 ));
             }
@@ -137,20 +142,12 @@ impl EFTimeMetadata {
         })
     }
 
-    pub fn get_created(&self) -> &EFUTCTimestamp {
-        &self.created
+    pub fn update_last_accessed(&mut self) {
+        self.last_accessed = EFUTCTimestamp::new_now_timestamp();
     }
-    pub fn get_last_accessed(&self) -> &EFUTCTimestamp {
-        &self.last_accessed 
-    }
-    pub fn update_last_accessed(&mut self, new_timestamp: &EFUTCTimestamp) {
-        self.last_accessed = new_timestamp.clone();
-    }
-    pub fn get_last_modified(&self) -> &EFUTCTimestamp {
-        &self.last_modified
-    }
-    pub fn update_last_modified(&mut self, new_timestamp: &EFUTCTimestamp) {
-        self.last_modified = new_timestamp.clone();
+
+    pub fn update_last_modified(&mut self) {
+        self.last_modified = EFUTCTimestamp::new_now_timestamp();
     }
 }
 

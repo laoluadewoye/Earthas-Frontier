@@ -1,4 +1,6 @@
 use std::hash::Hash;
+use strum::IntoEnumIterator;
+use strum_macros::{AsRefStr, EnumIter};
 use crate::elements::{
     EFVersion, 
     EFComponent, 
@@ -9,12 +11,16 @@ use crate::elements::{
 };
 use crate::elements::timestamp::{EFUTCTimestamp, EFTimeMetadata, EFTimePeriod};
 use crate::elements::uri::{EFURIString};
-use crate::utils::result::{EFResult, EFValueResult};
+use crate::utils::result::{EFResult, EFReturnEvent, EFValueResult};
 use crate::elements::rule::{
-    EFBasicRuleTracker, EFRuleEffect, EFRulePrivilege, EFRuleTracker, EFRuleTrackerRequest, EFRuleTrackerResponse
+    EFBasicRuleTracker, 
+    EFRuleEffect, 
+    EFRulePrivilege, 
+    EFRuleTrackerRequest, 
+    EFRuleTrackerResponse
 };
 
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, AsRefStr, EnumIter)]
 pub enum EFEntityPrivilege {
     Owner, // Supercedes all other privileges
     CloneEntity,
@@ -33,69 +39,37 @@ pub enum EFEntityPrivilege {
 }
 
 impl EFRulePrivilege for EFEntityPrivilege {
-    fn as_str(&self) -> &str {
-        match self {
-            EFEntityPrivilege::Owner => "Owner",
-            EFEntityPrivilege::CloneEntity => "Clone Entity",
-            EFEntityPrivilege::GetMetadata => "Get Metadata",
-            EFEntityPrivilege::SetMetadata => "Set Metadata",
-            EFEntityPrivilege::AccessUserRules => "Access User Rules",
-            EFEntityPrivilege::AccessRules => "Access Rules",
-            EFEntityPrivilege::ModifyRules => "Modify Rules",
-            EFEntityPrivilege::AccessTags => "Access Tags",
-            EFEntityPrivilege::ModifyTags => "Modify Tags",
-            EFEntityPrivilege::GetComponentMetadata => "Get Component Metadata",
-            EFEntityPrivilege::BorrowComponent => "Borrow Component",
-            EFEntityPrivilege::BorrowMutableComponent => "Borrow Mutable Component",
-            EFEntityPrivilege::CloneComponent => "CloneComponent",
-            EFEntityPrivilege::UseComponentHandler => "Use Component Handler",
-        }
-    }
-
-    fn get_all_as_strings() -> Vec<String> {
-        vec![
-            String::from("Owner"),
-            String::from("Clone Entity"),
-            String::from("Get Metadata"),
-            String::from("Set Metadata"),
-            String::from("Access User Rules"),
-            String::from("Access Rules"),
-            String::from("Modify Rules"),
-            String::from("Access Tags"),
-            String::from("Modify Tags"),
-            String::from("Get Component Metadata"),
-            String::from("Borrow Component"),
-            String::from("Borrow Mutable Component"),
-            String::from("Clone Component"),
-            String::from("Use Component Handler"),
-        ]
+    fn get_all_privileges() -> Vec<String> {
+        EFEntityPrivilege::iter().map(|p| p.as_ref().to_string()).collect()
     }
 }
 
-pub trait EFEntity {
-    type EntityType: EFEntity;
+pub trait EFEntity: Clone {
     type PrivilegeType: EFRulePrivilege;
-    type RuleTrackerType: EFRuleTracker;
     type ComponentType: EFComponent;
-    type ComponentRequestType: EFComponentRequest;
-    type ComponentResponseType: EFComponentResponse;
 
     // Create new entity
     fn new(
         name: EFName, 
         owner: EFURIString,
         system: EFURIString,
-        component: Self::ComponentType
-    ) -> Self::EntityType;
+        validity: EFTimePeriod,
+        retention: EFTimePeriod,
+        component: Self::ComponentType,
+        entity_hash: &String
+    ) -> Self;
+
+    // Create fallback for failure
+    fn fallback(event: EFReturnEvent) -> Self;
 
     // Clone entity
-    fn clone_entity(&self) -> Self::EntityType;
+    fn clone_entity(&self) -> Self;
 
     // Check entity rules for a certain action
     fn check_privilege(
         &self, 
         current_id: &EFURIString,
-        target_privilege: Self::PrivilegeType
+        target_privilege: &Self::PrivilegeType
     ) -> EFValueResult<EFRuleEffect>;
 
     // Work with entity's ID
@@ -182,22 +156,15 @@ pub trait EFEntity {
     fn get_component_version(&self, current_id: &EFURIString) -> EFResult<&EFVersion>;
     fn get_component_type(&self, current_id: &EFURIString) -> EFResult<&str>;
 
-    // Borrow an entity's component
-    fn borrow_component(&self, current_id: &EFURIString) -> EFValueResult<&Self::ComponentType>;
-    fn borrow_mutable_component(
-        &mut self,
-        current_id: &EFURIString
-    ) -> EFValueResult<&mut Self::ComponentType>;
-
     // Clone the component
     fn clone_component(&self, current_id: &EFURIString) -> EFValueResult<Self::ComponentType>;
 
     // Handle a component request
-    fn handle_component_request(
+    fn handle_component_request<REQ: EFComponentRequest, RES: EFComponentResponse>(
         &self,
         current_id: &EFURIString,
-        request: &Self::ComponentRequestType
-    ) -> Self::ComponentResponseType;
+        request: &REQ
+    ) -> RES;
 }
 
 pub trait EFEntityTracker {

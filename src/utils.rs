@@ -34,7 +34,7 @@ pub mod element_types {
 }
 
 pub mod element_versions {
-    use crate::elements::EFVersion;
+    use super::version::EFVersion;
     
     // Unsigned integers
     pub const EFUSIZE_VERSION: EFVersion = EFVersion(0, 1, 0);
@@ -71,11 +71,22 @@ pub mod element_versions {
 }
 
 pub mod constants {
-    use crate::elements::EFVersion;
+    use super::version::EFVersion;
 
     pub const EMPTY_VERSION: EFVersion = EFVersion(0, 0, 0);
     pub const EMPTY_STR_SLICE: &'static str = "";
     pub const DEFAULT_LOG_DELIMITER: char = '\n';
+}
+
+pub mod version {
+    #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+    pub struct EFVersion(pub usize, pub usize, pub usize);
+
+    impl EFVersion {
+        pub fn get_major(&self) -> usize { self.0 }
+        pub fn get_minor(&self) -> usize { self.1 }
+        pub fn get_patch(&self) -> usize { self.2 }
+    }
 }
 
 pub mod result {
@@ -186,6 +197,10 @@ pub mod result {
             EFReturn { value: new_value, event: new_event }
         }
 
+        pub fn decompose(new_return: EFReturn<T>) -> (T, EFReturnEvent) {
+            (new_return.value, new_return.event)
+        }
+
         pub fn from_enum(ret_enum: EFReturnEnum<T>) -> EFReturn<T> {
             match ret_enum {
                 EFReturnEnum::Value(v) => EFReturn::new(v),
@@ -238,10 +253,6 @@ pub mod result {
             let mut new_return: EFReturn<T> = EFReturn::from_enum(ret_enum);
             new_return.event.add_func_info_log(func_name, info);
             new_return
-        }
-
-        pub fn decompose(&self) -> (T, EFReturnEvent) {
-            (self.value, self.event)
         }
     }
 

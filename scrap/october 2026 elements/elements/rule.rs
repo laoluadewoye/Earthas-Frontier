@@ -1,29 +1,22 @@
 use std::hash::Hash;
 use std::collections::HashMap;
+use strum::IntoEnumIterator;
+use strum_macros::AsRefStr;
+
 use crate::utils::result::{EFValueResult, EFReturnEvent, EFResult, EFReturn};
 use crate::utils::general::get_hash;
 use crate::utils::hashmap::get_keys_vec;
 use crate::elements::uri::EFURIString;
 use crate::elements::tracker::EFItemTracker;
 
-pub trait EFRulePrivilege: Clone + Eq + Hash {
-    fn as_str(&self) -> &str;
-    fn get_all_as_strings() -> Vec<String>;
+pub trait EFRulePrivilege: Clone + Eq + Hash + IntoEnumIterator + AsRef<str> {
+    fn get_all_privileges() -> Vec<String>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, AsRefStr)]
 pub enum EFRuleEffect {
     Allow,
     Deny
-}
-
-impl EFRuleEffect {
-    pub fn as_str(&self) -> &str {
-        match self {
-            EFRuleEffect::Allow => "Allow",
-            EFRuleEffect::Deny => "Deny"
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -65,8 +58,8 @@ impl<P: EFRulePrivilege> EFRule<P> {
         get_hash(
             vec![
                 &self.identity.0, 
-                &self.effect.as_str().to_string(), 
-                &self.privilege.as_str().to_string()
+                &self.effect.as_ref().to_string(), 
+                &self.privilege.as_ref().to_string()
             ], 
             rule_hash
         )
@@ -76,8 +69,8 @@ impl<P: EFRulePrivilege> EFRule<P> {
         format!(
             "{} {} for {}", 
             self.identity.0.as_str(),
-            self.effect.as_str(),
-            self.privilege.as_str()
+            self.effect.as_ref().to_string(),
+            self.privilege.as_ref().to_string()
         )
     }
 }
@@ -146,6 +139,13 @@ pub trait EFRuleTracker {
         property_target: &EFRulePropertyTarget<Self::PrivilegeType>
     ) -> EFResult<Vec<EFRule<Self::PrivilegeType>>>;
 
+    // Privilege search (internal)
+    fn search_for_effect(
+        &self, 
+        id: &EFURIString,
+        privilege: &Self::PrivilegeType
+    ) -> EFRuleEffect;
+
     // Request handlers
     fn handle_rule_request(
         &mut self,
@@ -153,7 +153,7 @@ pub trait EFRuleTracker {
     ) -> EFRuleTrackerResponse<Self::PrivilegeType>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EFBasicRuleHashEntry {
     rules_index: usize,
     allow_rules_index: Option<usize>,
@@ -162,7 +162,7 @@ pub struct EFBasicRuleHashEntry {
     privilege_map_index: usize
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EFBasicRuleTracker<P: EFRulePrivilege> {
     rules: EFItemTracker<EFRule<P>>,
     rule_hashes: HashMap<String, EFBasicRuleHashEntry>,
@@ -283,7 +283,7 @@ impl<P: EFRulePrivilege> EFBasicRuleTracker<P> {
             None => {
                 return Err(EFReturnEvent::new_with_func_info_log(
                     "pop_from_tracker", 
-                    format!("Privilege {} does not have any rules.", rule.privilege.as_str()).as_str()
+                    format!("Privilege {} does not have any rules.", rule.privilege.as_ref()).as_str()
                 ));
             }
         };
@@ -389,7 +389,7 @@ impl<P: EFRulePrivilege> EFBasicRuleTracker<P> {
                         "compact_tracker", 
                         format!(
                             "Cannot find privilege {} in privilege translation set to continue compation operation.", 
-                            rule.privilege.as_str()
+                            rule.privilege.as_ref()
                         ).as_str()
                     ));
                 }
@@ -436,7 +436,7 @@ impl<P: EFRulePrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
         let mut found_rules_event: EFReturnEvent = EFReturnEvent::new();
 
         // Setup closure
-        let get_hash_closure = | temp_hash: &String | {
+        let mut get_hash_closure = | temp_hash: &String | {
             match self.rule_hashes.get(temp_hash) {
                 Some(hash_entry) => match self.rules.get_item(hash_entry.rules_index) {
                     Some(rule) => {
@@ -526,12 +526,12 @@ impl<P: EFRulePrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                     value: get_property_pipeline(privilege_rules.get_all_items()), 
                     event: EFReturnEvent::new_with_func_info_log(
                         "get_rules_by_property", 
-                        format!("Got rules for privilege {}.", privilege.as_str()).as_str()
+                        format!("Got rules for privilege {}.", privilege.as_ref()).as_str()
                     )
                 }),
                 None => Err(EFReturnEvent::new_with_func_info_log(
                     "get_rules_by_property", 
-                    format!("Could not get rules for privilege {}.", privilege.as_str()).as_str()
+                    format!("Could not get rules for privilege {}.", privilege.as_ref()).as_str()
                 ))
             },
             EFRulePropertyTarget::Identity(identity) => match self.identity_map.get(identity) {
@@ -650,7 +650,7 @@ impl<P: EFRulePrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
         let mut popped_rules_event: EFReturnEvent = EFReturnEvent::new();
 
         // Setup closure
-        let pop_hash_closure = | temp_hash: &String | {
+        let mut pop_hash_closure = | temp_hash: &String | {
             match self.pop_from_tracker(temp_hash) {
                 Ok(rule_return) => {
                     popped_rules.push(
@@ -724,12 +724,12 @@ impl<P: EFRulePrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
                     value: pop_property_pipeline(privilege_rules.pop_all_items()), 
                     event: EFReturnEvent::new_with_func_info_log(
                         "pop_rules_by_property", 
-                        format!("Popped rules for privilege {}.", privilege.as_str()).as_str()
+                        format!("Popped rules for privilege {}.", privilege.as_ref()).as_str()
                     )
                 }),
                 None => Err(EFReturnEvent::new_with_func_info_log(
                     "pop_rules_by_property", 
-                    format!("Could not pop rules for privilege {}.", privilege.as_str()).as_str()
+                    format!("Could not pop rules for privilege {}.", privilege.as_ref()).as_str()
                 ))
             },
             EFRulePropertyTarget::Identity(identity) => match self.identity_map.get_mut(identity) {
@@ -748,13 +748,25 @@ impl<P: EFRulePrivilege> EFRuleTracker for EFBasicRuleTracker<P> {
         }
     }
 
+    fn search_for_effect(
+        &self, 
+        id: &EFURIString,
+        privilege: &Self::PrivilegeType
+    ) -> EFRuleEffect
+    {
+        // Everything is deny by default
+        // 
+        // Look for allow
+        // Look for deny
+    }
+
     fn handle_rule_request(
         &mut self,
         request: EFRuleTrackerRequest<Self::PrivilegeType>
     ) -> EFRuleTrackerResponse<Self::PrivilegeType>
     {
         let create_retrieved_rules = | rules_result: EFReturn<Vec<&EFRule<Self::PrivilegeType>>> | -> EFRuleTrackerResponse<Self::PrivilegeType> {
-            let (rules_value, rules_event) = rules_result.decompose();
+            let (rules_value, rules_event) = EFReturn::decompose(rules_result);
             let compatible_rules: Vec<EFRule<Self::PrivilegeType>> = rules_value.into_iter().map(|r| r.clone()).collect();
             EFRuleTrackerResponse::RetrievedRules(
                 EFReturn::compose(compatible_rules, rules_event)
